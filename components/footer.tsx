@@ -1,33 +1,85 @@
 import Link from "next/link";
+import Image from "next/image";
 
 export function Footer() {
   return (
-    <footer className="border-t py-10" style={{ borderColor: "var(--border)", color: "var(--muted)" }}>
-      <div className="container-shell grid gap-8 text-sm sm:grid-cols-3">
+    <footer
+      className="border-t-2 mt-8"
+      style={{ borderColor: "var(--border)", color: "var(--muted)", background: "var(--sand)" }}
+    >
+      <div className="container-shell grid gap-10 py-12 sm:grid-cols-[1.2fr_1fr_1fr]">
+        {/* Brand */}
         <div>
-          <p className="font-bold text-[var(--foreground)]">Forno Irma</p>
-          <p className="mt-2">Artigiani del pane dal 1978.</p>
+          <div className="flex items-center gap-3 mb-4">
+            <Image src="/Logo.jpg" alt="Forno Irma" width={44} height={44} className="rounded-md" />
+            <span className="font-extrabold text-lg leading-tight" style={{ color: "var(--foreground)" }}>
+              Forno<br /><span style={{ color: "var(--accent)" }}>Irma</span>
+            </span>
+          </div>
+          <p className="text-sm leading-relaxed">Artigiani del pane dal 1978. Lievito madre, impasto a mano, nessun additivo.</p>
+          <a
+            href="https://www.instagram.com/forno_irma/"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="mt-4 inline-flex items-center gap-2 rounded-full px-4 py-2 text-xs font-bold transition-all hover:opacity-80"
+            style={{ background: "var(--foreground)", color: "var(--background)" }}
+          >
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zM12 0C8.741 0 8.333.014 7.053.072 2.695.272.273 2.69.073 7.052.014 8.333 0 8.741 0 12c0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98C8.333 23.986 8.741 24 12 24c3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98C15.668.014 15.259 0 12 0zm0 5.838a6.162 6.162 0 100 12.324 6.162 6.162 0 000-12.324zM12 16a4 4 0 110-8 4 4 0 010 8zm6.406-11.845a1.44 1.44 0 100 2.881 1.44 1.44 0 000-2.881z"/>
+            </svg>
+            @forno_irma
+          </a>
         </div>
+
+        {/* Nav */}
         <div>
-          <p className="font-semibold text-[var(--foreground)]">Navigazione</p>
-          <ul className="mt-2 space-y-1">
-            <li><Link href="/prodotti" className="hover:text-[var(--foreground)]">Prodotti</Link></li>
-            <li><Link href="/prenotazioni" className="hover:text-[var(--foreground)]">Prenotazioni</Link></li>
-            <li><Link href="/chi-siamo" className="hover:text-[var(--foreground)]">Chi siamo</Link></li>
-            <li><Link href="/contatti" className="hover:text-[var(--foreground)]">Contatti</Link></li>
+          <p className="text-xs font-bold uppercase tracking-widest mb-4" style={{ color: "var(--foreground)" }}>
+            Esplora
+          </p>
+          <ul className="space-y-2 text-sm">
+            {[
+              { href: "/prodotti", label: "Prodotti" },
+              { href: "/prenotazioni", label: "Prenotazioni" },
+              { href: "/chi-siamo", label: "Chi siamo" },
+              { href: "/contatti", label: "Contatti" },
+            ].map(({ href, label }) => (
+              <li key={href}>
+                <Link href={href} className="hover:text-[var(--foreground)] transition-colors font-medium">
+                  {label}
+                </Link>
+              </li>
+            ))}
           </ul>
         </div>
+
+        {/* Account */}
         <div>
-          <p className="font-semibold text-[var(--foreground)]">Account</p>
-          <ul className="mt-2 space-y-1">
-            <li><Link href="/login" className="hover:text-[var(--foreground)]">Accedi</Link></li>
-            <li><Link href="/register" className="hover:text-[var(--foreground)]">Registrati</Link></li>
-            <li><Link href="/area-clienti/prenotazioni" className="hover:text-[var(--foreground)]">Le mie prenotazioni</Link></li>
+          <p className="text-xs font-bold uppercase tracking-widest mb-4" style={{ color: "var(--foreground)" }}>
+            Account
+          </p>
+          <ul className="space-y-2 text-sm">
+            {[
+              { href: "/login", label: "Accedi" },
+              { href: "/register", label: "Registrati" },
+              { href: "/area-clienti/prenotazioni", label: "Le mie prenotazioni" },
+              { href: "/profilo", label: "Profilo" },
+            ].map(({ href, label }) => (
+              <li key={href}>
+                <Link href={href} className="hover:text-[var(--foreground)] transition-colors font-medium">
+                  {label}
+                </Link>
+              </li>
+            ))}
           </ul>
         </div>
       </div>
-      <div className="container-shell mt-8 border-t pt-6 text-xs" style={{ borderColor: "var(--border)" }}>
-        <p>© {new Date().getFullYear()} Forno Irma. Tutti i diritti riservati.</p>
+
+      <div
+        className="container-shell border-t-2 py-5 flex flex-col sm:flex-row items-center justify-between gap-2 text-xs"
+        style={{ borderColor: "var(--border)" }}
+      >
+        <p>© {new Date().getFullYear()} Forno Irma — Tutti i diritti riservati.</p>
+        <p className="opacity-50">Fatto con ❤️ nel quartiere</p>
       </div>
     </footer>
   );

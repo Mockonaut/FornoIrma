@@ -10,24 +10,24 @@ async function main() {
   console.log("🌱 Seeding database...");
 
   // ─── Business Settings ──────────────────────────────────────────────────────
+  const settingsData = {
+    address: "Via Roma 12, 00100 Roma RM",
+    phone: "+39 06 1234567",
+    email: "info@fornoirma.it",
+    instagramUrl: "https://www.instagram.com/forno_irma/",
+    pickupInstructions:
+      "Ritiro in negozio nelle fasce orarie selezionate. Nessun pagamento online: si paga al ritiro.",
+    openingHours: [
+      { day: "Lunedì", hours: "Chiuso" },
+      { day: "Martedì – Venerdì", hours: "07:00 – 13:30 / 16:00 – 19:30" },
+      { day: "Sabato", hours: "07:00 – 14:00" },
+      { day: "Domenica", hours: "07:30 – 13:00" },
+    ],
+  };
   await prisma.businessSettings.upsert({
     where: { id: "singleton" },
-    update: {},
-    create: {
-      id: "singleton",
-      address: "Via Roma 12, 00100 Roma RM",
-      phone: "+39 06 1234567",
-      email: "info@fornoirma.it",
-      instagramUrl: "https://instagram.com/fornoirma",
-      pickupInstructions:
-        "Ritiro in negozio nelle fasce orarie selezionate. Nessun pagamento online: si paga al ritiro.",
-      openingHours: [
-        { day: "Lunedì", hours: "Chiuso" },
-        { day: "Martedì – Venerdì", hours: "07:00 – 13:30 / 16:00 – 19:30" },
-        { day: "Sabato", hours: "07:00 – 14:00" },
-        { day: "Domenica", hours: "07:30 – 13:00" },
-      ],
-    },
+    update: settingsData,
+    create: { id: "singleton", ...settingsData },
   });
 
   // ─── Site Content ────────────────────────────────────────────────────────────
@@ -166,7 +166,6 @@ Siamo un forno di quartiere. Ci piace conoscere i nostri clienti per nome e sape
         isVisible: true,
       },
     });
-    // Add image if not already present
     const existing = await prisma.productImage.findFirst({ where: { productId: product.id } });
     if (!existing) {
       await prisma.productImage.create({ data: { productId: product.id, url: p.image, sortOrder: 0 } });

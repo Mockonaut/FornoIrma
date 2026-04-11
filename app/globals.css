@@ -2,95 +2,135 @@
 
 @layer base {
   :root {
-    --background: #faf9f7;
-    --foreground: #1c1917;
-    --muted: #78716c;
-    --accent: #b45309;
-    --accent-hover: #92400e;
-    --border: #e7e5e4;
-    --card-bg: #ffffff;
-    --radius: 1.25rem;
+    --background: #FDFAF3;
+    --foreground: #160F06;
+    --muted: #7A6A56;
+    --accent: #C93B18;
+    --accent-hover: #A82E11;
+    --accent-light: #FDF0EC;
+    --border: #E2D9CC;
+    --card-bg: #FFFFFF;
+    --sand: #F2EBD9;
+    --radius: 1rem;
   }
 
-  * {
-    box-sizing: border-box;
-  }
+  * { box-sizing: border-box; }
 
-  html {
-    scroll-behavior: smooth;
-  }
+  html { scroll-behavior: smooth; }
 
   body {
     background-color: var(--background);
     color: var(--foreground);
-    font-family: ui-sans-serif, system-ui, sans-serif;
+    font-family: ui-sans-serif, system-ui, -apple-system, sans-serif;
     line-height: 1.6;
     -webkit-font-smoothing: antialiased;
   }
 
   h1, h2, h3, h4, h5, h6 {
-    line-height: 1.2;
-    font-weight: 700;
+    line-height: 1.15;
+    font-weight: 800;
+    letter-spacing: -0.02em;
   }
 }
 
 @layer components {
-  /* Layout */
   .container-shell {
-    @apply mx-auto w-full max-w-6xl px-4 sm:px-6 lg:px-8;
+    @apply mx-auto w-full max-w-6xl px-5 sm:px-8 lg:px-10;
   }
 
-  /* Card */
+  /* ── Cards ─────────────────────────────────────────────── */
   .card {
     background-color: var(--card-bg);
-    border: 1px solid var(--border);
+    border: 2px solid var(--border);
     border-radius: var(--radius);
   }
 
-  /* Buttons */
+  .card-sand {
+    background-color: var(--sand);
+    border: 2px solid var(--border);
+    border-radius: var(--radius);
+  }
+
+  /* ── Buttons ────────────────────────────────────────────── */
   .btn-primary {
-    @apply inline-flex items-center justify-center rounded-full px-6 py-2.5 text-sm font-semibold transition-colors;
+    @apply inline-flex items-center justify-center rounded-full px-7 py-3 text-sm font-bold tracking-wide transition-all;
     background-color: var(--accent);
     color: #fff;
+    border: 2px solid var(--accent);
   }
   .btn-primary:hover {
     background-color: var(--accent-hover);
+    border-color: var(--accent-hover);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 16px color-mix(in srgb, var(--accent) 30%, transparent);
   }
 
   .btn-secondary {
-    @apply inline-flex items-center justify-center rounded-full border px-6 py-2.5 text-sm font-semibold transition-colors;
-    border-color: var(--border);
+    @apply inline-flex items-center justify-center rounded-full px-7 py-3 text-sm font-bold tracking-wide transition-all;
+    border: 2px solid var(--foreground);
+    color: var(--foreground);
+    background-color: transparent;
+  }
+  .btn-secondary:hover {
+    background-color: var(--foreground);
+    color: var(--background);
+    transform: translateY(-1px);
+  }
+
+  .btn-ghost {
+    @apply inline-flex items-center justify-center rounded-full px-6 py-2.5 text-sm font-semibold transition-all;
+    border: 2px solid var(--border);
     color: var(--foreground);
     background-color: var(--card-bg);
   }
-  .btn-secondary:hover {
-    background-color: #f5f5f4;
+  .btn-ghost:hover {
+    border-color: var(--foreground);
+    background-color: var(--sand);
   }
 
-  /* Inputs */
+  /* ── Inputs ─────────────────────────────────────────────── */
   .input {
-    @apply w-full rounded-xl border px-4 py-2.5 text-sm transition-colors outline-none;
-    border-color: var(--border);
-    background-color: var(--card-bg);
+    @apply w-full rounded-xl px-4 py-3 text-sm transition-all outline-none;
+    border: 2px solid var(--border);
+    background-color: var(--background);
     color: var(--foreground);
   }
   .input:focus {
     border-color: var(--accent);
-    box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 15%, transparent);
+    background-color: var(--card-bg);
+    box-shadow: 0 0 0 4px color-mix(in srgb, var(--accent) 12%, transparent);
   }
-  .input::placeholder {
-    color: var(--muted);
-  }
+  .input::placeholder { color: var(--muted); }
 
-  /* Labels */
   .label {
-    @apply block text-sm font-medium;
+    @apply block text-sm font-semibold mb-1.5;
     color: var(--foreground);
+    letter-spacing: 0.01em;
   }
 
-  /* Error text */
   .error-text {
-    @apply text-sm;
+    @apply text-sm font-medium;
     color: #dc2626;
+  }
+
+  /* ── Tag / Badge ────────────────────────────────────────── */
+  .tag {
+    @apply inline-block rounded-full px-3 py-1 text-xs font-bold uppercase tracking-widest;
+    background-color: var(--sand);
+    color: var(--muted);
+    border: 1px solid var(--border);
+  }
+
+  .tag-accent {
+    @apply inline-block rounded-full px-3 py-1 text-xs font-bold uppercase tracking-widest;
+    background-color: var(--accent-light);
+    color: var(--accent);
+    border: 1px solid color-mix(in srgb, var(--accent) 20%, transparent);
+  }
+
+  /* ── Section label ──────────────────────────────────────── */
+  .section-label {
+    @apply text-xs font-bold uppercase tracking-[0.25em];
+    color: var(--muted);
   }
 }
