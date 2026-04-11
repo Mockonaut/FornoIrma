@@ -11,10 +11,11 @@
     --border: #E2D9CC;
     --card-bg: #FFFFFF;
     --sand: #F2EBD9;
-    --radius: 1rem;
+    --ink: #160F06;
+    --radius: 0.75rem;
   }
 
-  * { box-sizing: border-box; }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
 
   html { scroll-behavior: smooth; }
 
@@ -22,20 +23,21 @@
     background-color: var(--background);
     color: var(--foreground);
     font-family: ui-sans-serif, system-ui, -apple-system, sans-serif;
-    line-height: 1.6;
+    line-height: 1.5;
     -webkit-font-smoothing: antialiased;
+    overflow-x: hidden;
   }
 
   h1, h2, h3, h4, h5, h6 {
-    line-height: 1.15;
-    font-weight: 800;
-    letter-spacing: -0.02em;
+    line-height: 1.05;
+    font-weight: 900;
+    letter-spacing: -0.03em;
   }
 }
 
 @layer components {
   .container-shell {
-    @apply mx-auto w-full max-w-6xl px-5 sm:px-8 lg:px-10;
+    @apply mx-auto w-full max-w-7xl px-5 sm:px-8 lg:px-12;
   }
 
   /* ── Cards ─────────────────────────────────────────────── */
@@ -44,7 +46,6 @@
     border: 2px solid var(--border);
     border-radius: var(--radius);
   }
-
   .card-sand {
     background-color: var(--sand);
     border: 2px solid var(--border);
@@ -53,35 +54,41 @@
 
   /* ── Buttons ────────────────────────────────────────────── */
   .btn-primary {
-    @apply inline-flex items-center justify-center rounded-full px-7 py-3 text-sm font-bold tracking-wide transition-all;
+    @apply inline-flex items-center justify-center px-8 py-3.5 text-sm font-black tracking-wider uppercase transition-all;
     background-color: var(--accent);
     color: #fff;
     border: 2px solid var(--accent);
+    border-radius: 2px;
+    letter-spacing: 0.1em;
   }
   .btn-primary:hover {
     background-color: var(--accent-hover);
     border-color: var(--accent-hover);
-    transform: translateY(-1px);
-    box-shadow: 0 4px 16px color-mix(in srgb, var(--accent) 30%, transparent);
+    transform: translate(-2px, -2px);
+    box-shadow: 4px 4px 0 var(--foreground);
   }
 
   .btn-secondary {
-    @apply inline-flex items-center justify-center rounded-full px-7 py-3 text-sm font-bold tracking-wide transition-all;
+    @apply inline-flex items-center justify-center px-8 py-3.5 text-sm font-black tracking-wider uppercase transition-all;
     border: 2px solid var(--foreground);
     color: var(--foreground);
     background-color: transparent;
+    border-radius: 2px;
+    letter-spacing: 0.1em;
   }
   .btn-secondary:hover {
     background-color: var(--foreground);
     color: var(--background);
-    transform: translateY(-1px);
+    transform: translate(-2px, -2px);
+    box-shadow: 4px 4px 0 var(--accent);
   }
 
   .btn-ghost {
-    @apply inline-flex items-center justify-center rounded-full px-6 py-2.5 text-sm font-semibold transition-all;
-    border: 2px solid var(--border);
+    @apply inline-flex items-center justify-center px-5 py-2.5 text-xs font-bold uppercase tracking-wider transition-all;
+    border: 1.5px solid var(--border);
     color: var(--foreground);
-    background-color: var(--card-bg);
+    background-color: var(--background);
+    border-radius: 2px;
   }
   .btn-ghost:hover {
     border-color: var(--foreground);
@@ -90,47 +97,73 @@
 
   /* ── Inputs ─────────────────────────────────────────────── */
   .input {
-    @apply w-full rounded-xl px-4 py-3 text-sm transition-all outline-none;
+    @apply w-full px-4 py-3 text-sm transition-all outline-none;
     border: 2px solid var(--border);
     background-color: var(--background);
     color: var(--foreground);
+    border-radius: 2px;
   }
   .input:focus {
     border-color: var(--accent);
     background-color: var(--card-bg);
-    box-shadow: 0 0 0 4px color-mix(in srgb, var(--accent) 12%, transparent);
+    box-shadow: 3px 3px 0 var(--accent);
   }
   .input::placeholder { color: var(--muted); }
 
   .label {
-    @apply block text-sm font-semibold mb-1.5;
+    @apply block text-xs font-black uppercase tracking-widest mb-2;
     color: var(--foreground);
-    letter-spacing: 0.01em;
   }
 
   .error-text {
-    @apply text-sm font-medium;
+    @apply text-sm font-semibold;
     color: #dc2626;
   }
 
-  /* ── Tag / Badge ────────────────────────────────────────── */
+  /* ── Tags ───────────────────────────────────────────────── */
   .tag {
-    @apply inline-block rounded-full px-3 py-1 text-xs font-bold uppercase tracking-widest;
+    @apply inline-block px-3 py-1 text-xs font-black uppercase tracking-widest;
     background-color: var(--sand);
     color: var(--muted);
-    border: 1px solid var(--border);
+    border: 1.5px solid var(--border);
+    border-radius: 2px;
   }
-
   .tag-accent {
-    @apply inline-block rounded-full px-3 py-1 text-xs font-bold uppercase tracking-widest;
-    background-color: var(--accent-light);
-    color: var(--accent);
-    border: 1px solid color-mix(in srgb, var(--accent) 20%, transparent);
+    @apply inline-block px-3 py-1 text-xs font-black uppercase tracking-widest;
+    background-color: var(--accent);
+    color: #fff;
+    border-radius: 2px;
   }
 
   /* ── Section label ──────────────────────────────────────── */
   .section-label {
-    @apply text-xs font-bold uppercase tracking-[0.25em];
+    @apply text-xs font-black uppercase tracking-[0.3em];
     color: var(--muted);
+  }
+
+  /* ── Fluid display type ─────────────────────────────────── */
+  .display-huge {
+    font-size: clamp(5rem, 18vw, 18rem);
+    font-weight: 900;
+    line-height: 0.9;
+    letter-spacing: -0.04em;
+  }
+
+  .display-large {
+    font-size: clamp(3rem, 8vw, 8rem);
+    font-weight: 900;
+    line-height: 0.95;
+    letter-spacing: -0.03em;
+  }
+
+  /* ── Marquee ─────────────────────────────────────────────── */
+  @keyframes marquee {
+    from { transform: translateX(0); }
+    to   { transform: translateX(-50%); }
+  }
+  .marquee-track {
+    display: flex;
+    width: max-content;
+    animation: marquee 18s linear infinite;
   }
 }
