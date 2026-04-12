@@ -34,6 +34,56 @@ export const RESERVATION_TRANSITIONS: Partial<Record<ReservationStatus, { next?:
   CANCELLED:  [],
 };
 
+// ─── Stato apertura ───────────────────────────────────────────────────────────
+
+const IT_DAYS: Record<string, number> = {
+  lunedì: 1, martedì: 2, mercoledì: 3, giovedì: 4, venerdì: 5, sabato: 6, domenica: 7,
+};
+
+function parseTime(s: string): number {
+  const [h, m] = s.trim().split(":").map(Number);
+  return h * 60 + (m ?? 0);
+}
+
+/** Returns { open, opensAt, closesAt } given the openingHours JSON from BusinessSettings. */
+export function getOpenStatus(
+  openingHours: { day: string; hours: string }[],
+  now: Date = new Date()
+): { open: boolean; label: string; nextChange: string | null } {
+  // ISO day: Mon=1 … Sun=7
+  const dow = now.getDay() === 0 ? 7 : now.getDay();
+  const currentMinutes = now.getHours() * 60 + now.getMinutes();
+
+  for (const row of openingHours) {
+    // Match day range, e.g. "Martedì – Venerdì" or single "Sabato"
+    const parts = row.day.split(/\s*[–-]\s*/);
+    const from = IT_DAYS[parts[0].toLowerCase().trim()];
+    const to   = parts[1] ? IT_DAYS[parts[1].toLowerCase().trim()] : from;
+
+    if (from == null || to == null) continue;
+    if (dow < from || dow > to) continue;
+
+    if (row.hours.toLowerCase() === "chiuso") {
+      return { open: false, label: "Oggi chiuso", nextChange: null };
+    }
+
+    // hours format: "07:30 – 18:30"
+    const [openStr, closeStr] = row.hours.split(/\s*[–-]\s*/);
+    const openMin  = parseTime(openStr);
+    const closeMin = parseTime(closeStr);
+
+    if (currentMinutes < openMin) {
+      return { open: false, label: "Ancora chiuso", nextChange: openStr.trim() };
+    }
+    if (currentMinutes < closeMin) {
+      return { open: true,  label: "Aperto",        nextChange: closeStr.trim() };
+    }
+    return { open: false, label: "Chiuso per oggi", nextChange: null };
+  }
+
+  return { open: false, label: "Chiuso", nextChange: null };
+}
+
 export function generateReservationCode(): string {
   const prefix = "FI";
   const timestamp = Date.now().toString(36).toUpperCase();

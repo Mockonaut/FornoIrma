@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { getBusinessSettings } from "@/lib/data";
+import { OpenStatusBadge } from "@/components/open-status";
 
 export const metadata: Metadata = {
   title: "Contatti",
@@ -26,8 +27,11 @@ export default async function ContactsPage() {
           <p><strong className="text-[var(--foreground)]">Instagram:</strong> <a className="text-[var(--accent)]" href={settings?.instagramUrl ?? "https://instagram.com"}>Profilo ufficiale</a></p>
         </div>
         <div className="mt-8">
-          <h2 className="text-lg font-semibold">Orari</h2>
-          <div className="mt-4 space-y-2 text-sm text-[var(--muted)]">
+          <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
+            <h2 className="text-lg font-semibold">Orari</h2>
+            <OpenStatusBadge openingHours={openingHours} size="md" />
+          </div>
+          <div className="space-y-2 text-sm text-[var(--muted)]">
             {openingHours.map((row) => (
               <div key={row.day} className="flex items-center justify-between rounded-2xl bg-stone-50 px-4 py-3">
                 <span>{row.day}</span>
