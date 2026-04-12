@@ -16,7 +16,7 @@ export function Footer() {
               Forno<br /><span style={{ color: "var(--accent)" }}>Irma</span>
             </span>
           </div>
-          <p className="text-sm leading-relaxed">Artigiani del pane dal 1978. Lievito madre, impasto a mano, nessun additivo.</p>
+          <p className="text-sm leading-relaxed">Forno artigianale a Magenta. Lievito madre, impasto a mano, nessun additivo.</p>
           <a
             href="https://www.instagram.com/forno_irma/"
             target="_blank"
@@ -78,7 +78,7 @@ export function Footer() {
         className="container-shell border-t-2 py-5 flex flex-col sm:flex-row items-center justify-between gap-2 text-xs"
         style={{ borderColor: "var(--border)" }}
       >
-        <p>© {new Date().getFullYear()} Forno Irma — Tutti i diritti riservati.</p>
+        <p>© {new Date().getFullYear()} Forno Irma · Magenta — Tutti i diritti riservati.</p>
         <p className="opacity-50">Fatto con ❤️ nel quartiere</p>
       </div>
     </footer>

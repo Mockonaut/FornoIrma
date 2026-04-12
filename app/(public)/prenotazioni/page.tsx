@@ -113,7 +113,7 @@ export default async function BookingInfoPage() {
           <Image src="/Logo.jpg" alt="Forno Irma" width={64} height={64} className="rounded-md shrink-0 opacity-80" />
           <div>
             <p className="text-sm font-black uppercase tracking-widest" style={{ color: "rgba(253,250,243,0.4)" }}>
-              Forno Irma · Est. 1978
+              Forno Irma · Magenta
             </p>
             <p className="mt-1 text-lg font-black" style={{ color: "var(--background)" }}>
               Pronto quando lo sei tu.

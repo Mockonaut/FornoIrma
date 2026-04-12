@@ -11,9 +11,7 @@ export async function getVisibleProducts(categorySlug?: string) {
   return prisma.product.findMany({
     where: {
       isVisible: true,
-      ...(categorySlug
-        ? { category: { slug: categorySlug } }
-        : {}),
+      ...(categorySlug ? { category: { slug: categorySlug } } : {}),
     },
     include: {
       category: true,
@@ -26,6 +24,10 @@ export async function getVisibleProducts(categorySlug?: string) {
 export async function getHomeContent() {
   const contents = await prisma.siteContent.findMany();
   return Object.fromEntries(contents.map((c) => [c.key, c]));
+}
+
+export async function getDailySpecial() {
+  return prisma.siteContent.findUnique({ where: { key: "DAILY_SPECIAL" } });
 }
 
 export async function getBusinessSettings() {

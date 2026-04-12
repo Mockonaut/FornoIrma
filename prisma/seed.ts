@@ -3,16 +3,15 @@ import bcrypt from "bcryptjs";
 import slugify from "slugify";
 
 const prisma = new PrismaClient();
-
 const slug = (s: string) => slugify(s, { lower: true, strict: true });
 
 async function main() {
   console.log("🌱 Seeding database...");
 
-  // ─── Business Settings ──────────────────────────────────────────────────────
+  // ─── Business Settings ───────────────────────────────────────────────────────
   const settingsData = {
-    address: "Via Roma 12, 00100 Roma RM",
-    phone: "+39 06 1234567",
+    address: "Via Roma 12, 20013 Magenta MI",
+    phone: "+39 02 9790000",
     email: "info@fornoirma.it",
     instagramUrl: "https://www.instagram.com/forno_irma/",
     pickupInstructions:
@@ -37,11 +36,9 @@ async function main() {
     create: {
       key: "ABOUT_PAGE",
       title: "La storia di Forno Irma",
-      body: `Forno Irma nasce nel 1978 per volontà di Irma Rossi, che dopo anni di lavoro nelle cucine di mezza Italia decide di aprire il suo laboratorio artigianale nel cuore del quartiere.
+      body: `Forno Irma è il forno di riferimento del quartiere a Magenta. Ogni mattina lo stesso rito: farina, acqua, lievito naturale e le mani di chi conosce il mestiere. Nessun additivo, nessuna fretta.
 
-Da allora ogni mattina inizia allo stesso modo: farina, acqua, lievito naturale e le mani di chi conosce il mestiere. Nessun additivo, nessuna fretta.
-
-Oggi il forno è gestito dalla seconda generazione della famiglia, che porta avanti le ricette originali affiancandole a nuove proposte stagionali. La focaccia ripiena del martedì, il pane di semola del fine settimana, i dolci delle feste: ogni prodotto racconta un pezzo di storia.
+Il catalogo è volutamente semplice: due pani classici sempre presenti, il pan bauletto per i più golosi, i dolci del giorno e un pane speciale che cambia ogni mattina — perché la monotonia non fa per noi.
 
 Siamo un forno di quartiere. Ci piace conoscere i nostri clienti per nome e sapere cosa si aspettano quando entrano. La prenotazione online è il nostro modo di stare al passo con i tempi senza perdere il carattere artigianale che ci contraddistingue.`,
     },
@@ -57,97 +54,95 @@ Siamo un forno di quartiere. Ci piace conoscere i nostri clienti per nome e sape
     },
   });
 
-  // ─── Categories ─────────────────────────────────────────────────────────────
-  const categories = await Promise.all([
+  // Pane del giorno — aggiornato dall'admin ogni mattina
+  await prisma.siteContent.upsert({
+    where: { key: "DAILY_SPECIAL" },
+    update: {},
+    create: {
+      key: "DAILY_SPECIAL",
+      title: "Pane alle noci e rosmarino",
+      body: "Impasto rustico con noci tostate e rosmarino fresco. Crosta spessa, mollica morbida e profumata. Disponibile fino ad esaurimento.",
+    },
+  });
+
+  // ─── Categorie ───────────────────────────────────────────────────────────────
+  const [pane, bauletto, dolci] = await Promise.all([
     prisma.category.upsert({
       where: { slug: "pane" },
       update: {},
-      create: { name: "Pane", slug: "pane", description: "Pane artigianale a lievitazione naturale", sortOrder: 1 },
+      create: { name: "Pane", slug: "pane", description: "I due pani classici del forno, ogni giorno", sortOrder: 1 },
     }),
     prisma.category.upsert({
-      where: { slug: "focacce" },
+      where: { slug: "pan-bauletto" },
       update: {},
-      create: { name: "Focacce", slug: "focacce", description: "Focacce farcite e classiche", sortOrder: 2 },
+      create: { name: "Pan bauletto", slug: "pan-bauletto", description: "Il soffice del forno", sortOrder: 2 },
     }),
     prisma.category.upsert({
       where: { slug: "dolci" },
       update: {},
-      create: { name: "Dolci", slug: "dolci", description: "Torte, crostate e lievitati dolci", sortOrder: 3 },
-    }),
-    prisma.category.upsert({
-      where: { slug: "specialita" },
-      update: {},
-      create: { name: "Specialità", slug: "specialita", description: "Proposte stagionali e speciali", sortOrder: 4 },
+      create: { name: "Dolci", slug: "dolci", description: "Dolci e lievitati del giorno", sortOrder: 3 },
     }),
   ]);
 
-  const [pane, focacce, dolci, specialita] = categories;
+  // Rimuoviamo la vecchia categoria "specialita" se esiste
+  await prisma.category.updateMany({
+    where: { slug: "focacce" },
+    data: { isVisible: false },
+  });
+  await prisma.category.updateMany({
+    where: { slug: "specialita" },
+    data: { isVisible: false },
+  });
 
-  // ─── Products ────────────────────────────────────────────────────────────────
+  // ─── Prodotti ────────────────────────────────────────────────────────────────
   const products = [
+    // I due pani fissi
     {
-      name: "Pane di semola",
+      name: "Pane di farina bianca",
       categoryId: pane.id,
-      shortDescription: "Semola rimacinata di grano duro, crosta dorata e mollica profumata.",
+      shortDescription: "Il classico. Crosta croccante, mollica aperta. Lievito madre, cottura a legna.",
       isSeasonal: false,
       isSpecial: false,
+      sortOrder: 1,
       image: "https://images.unsplash.com/photo-1549931319-a545dcf3bc73?auto=format&fit=crop&w=1200&q=80",
     },
     {
       name: "Pane integrale",
       categoryId: pane.id,
-      shortDescription: "Farina integrale macinata a pietra, ricco di fibre e dal sapore pieno.",
+      shortDescription: "Farina integrale macinata a pietra. Sapore pieno, nutriente, con la crosta che scricchiola.",
       isSeasonal: false,
       isSpecial: false,
+      sortOrder: 2,
       image: "https://images.unsplash.com/photo-1598373182133-52452f7691ef?auto=format&fit=crop&w=1200&q=80",
     },
+    // Pan bauletto
     {
-      name: "Filone con olive",
-      categoryId: pane.id,
-      shortDescription: "Impasto morbido con olive taggiasche. Disponibile il venerdì.",
-      isSeasonal: false,
-      isSpecial: true,
-      image: "https://images.unsplash.com/photo-1509440159596-0249088772ff?auto=format&fit=crop&w=1200&q=80",
-    },
-    {
-      name: "Focaccia classica",
-      categoryId: focacce.id,
-      shortDescription: "Olio extravergine, sale grosso e rosmarino. Alta e soffice.",
+      name: "Pan bauletto",
+      categoryId: bauletto.id,
+      shortDescription: "Soffice, leggero, con una crosticina sottile. Perfetto a colazione o per i più piccoli.",
       isSeasonal: false,
       isSpecial: false,
-      image: "https://images.unsplash.com/photo-1565299585323-38d6b0865b47?auto=format&fit=crop&w=1200&q=80",
+      sortOrder: 1,
+      image: "https://images.unsplash.com/photo-1555507036-ab1f4038808a?auto=format&fit=crop&w=1200&q=80",
     },
-    {
-      name: "Focaccia ripiena",
-      categoryId: focacce.id,
-      shortDescription: "Ripieno del giorno: mortadella e stracchino oppure pomodoro e mozzarella.",
-      isSeasonal: false,
-      isSpecial: true,
-      image: "https://images.unsplash.com/photo-1571091718767-18b5b1457add?auto=format&fit=crop&w=1200&q=80",
-    },
+    // Dolci
     {
       name: "Crostata alla marmellata",
       categoryId: dolci.id,
-      shortDescription: "Pasta frolla burrosissima con marmellata di albicocche o fragole.",
+      shortDescription: "Pasta frolla burrosissima con marmellata di albicocche o fragole, secondo la stagione.",
       isSeasonal: false,
       isSpecial: false,
+      sortOrder: 1,
       image: "https://images.unsplash.com/photo-1464305795204-6f5bbfc7fb81?auto=format&fit=crop&w=1200&q=80",
     },
     {
       name: "Cornetti al burro",
       categoryId: dolci.id,
-      shortDescription: "Sfogliatura con burro di qualità. Vuoti o con crema.",
+      shortDescription: "Sfogliatura con burro di qualità. Vuoti o con crema pasticcera.",
       isSeasonal: false,
       isSpecial: false,
+      sortOrder: 2,
       image: "https://images.unsplash.com/photo-1555507036-ab1f4038808a?auto=format&fit=crop&w=1200&q=80",
-    },
-    {
-      name: "Panettone artigianale",
-      categoryId: specialita.id,
-      shortDescription: "Produzione limitata in novembre e dicembre. Uvetta e canditi o cioccolato.",
-      isSeasonal: true,
-      isSpecial: true,
-      image: "https://images.unsplash.com/photo-1481391319762-47dff72954d9?auto=format&fit=crop&w=1200&q=80",
     },
   ];
 
@@ -155,7 +150,7 @@ Siamo un forno di quartiere. Ci piace conoscere i nostri clienti per nome e sape
     const productSlug = slug(p.name);
     const product = await prisma.product.upsert({
       where: { slug: productSlug },
-      update: {},
+      update: { sortOrder: p.sortOrder },
       create: {
         name: p.name,
         slug: productSlug,
@@ -164,6 +159,7 @@ Siamo un forno di quartiere. Ci piace conoscere i nostri clienti per nome e sape
         isSeasonal: p.isSeasonal,
         isSpecial: p.isSpecial,
         isVisible: true,
+        sortOrder: p.sortOrder,
       },
     });
     const existing = await prisma.productImage.findFirst({ where: { productId: product.id } });
@@ -172,7 +168,7 @@ Siamo un forno di quartiere. Ci piace conoscere i nostri clienti per nome e sape
     }
   }
 
-  // ─── Pickup Slots ────────────────────────────────────────────────────────────
+  // ─── Fasce orarie ────────────────────────────────────────────────────────────
   const slots = [
     { label: "Mattina (08:00 – 10:00)", startTime: "08:00", endTime: "10:00" },
     { label: "Mattina tarda (10:00 – 12:00)", startTime: "10:00", endTime: "12:00" },
@@ -189,8 +185,7 @@ Siamo un forno di quartiere. Ci piace conoscere i nostri clienti per nome e sape
 
   // ─── Admin user ──────────────────────────────────────────────────────────────
   const adminEmail = "admin@fornoirma.it";
-  const existingAdmin = await prisma.user.findUnique({ where: { email: adminEmail } });
-  if (!existingAdmin) {
+  if (!await prisma.user.findUnique({ where: { email: adminEmail } })) {
     await prisma.user.create({
       data: {
         name: "Admin Forno Irma",
@@ -206,10 +201,5 @@ Siamo un forno di quartiere. Ci piace conoscere i nostri clienti per nome e sape
 }
 
 main()
-  .catch((e) => {
-    console.error(e);
-    process.exit(1);
-  })
-  .finally(async () => {
-    await prisma.$disconnect();
-  });
+  .catch((e) => { console.error(e); process.exit(1); })
+  .finally(async () => { await prisma.$disconnect(); });

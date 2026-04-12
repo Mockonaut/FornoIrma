@@ -1,16 +1,21 @@
 import Link from "next/link";
 import Image from "next/image";
-import { getVisibleProducts } from "@/lib/data";
+import { getDailySpecial, getVisibleProducts } from "@/lib/data";
 
 export default async function HomePage() {
-  const products = await getVisibleProducts();
-  const featured = products.slice(0, 4);
+  const [daily, products] = await Promise.all([
+    getDailySpecial(),
+    getVisibleProducts(),
+  ]);
+
+  // Fissi: pane bianco, integrale, pan bauletto — tutto tranne "speciale"
+  const regulars = products.filter((p) => !p.isSpecial).slice(0, 3);
 
   return (
     <div style={{ background: "var(--background)" }}>
 
       {/* ══════════════════════════════════════════════
-          HERO — poster tipografico, full viewport
+          HERO — poster tipografico
       ══════════════════════════════════════════════ */}
       <section
         className="relative min-h-[92vh] flex flex-col border-b-2"
@@ -23,7 +28,7 @@ export default async function HomePage() {
         >
           <div className="flex items-center gap-3">
             <Image src="/Logo.jpg" alt="Forno Irma" width={36} height={36} className="rounded" priority />
-            <span className="text-xs font-black uppercase tracking-[0.2em]">Est. 1978</span>
+            <span className="text-xs font-black uppercase tracking-[0.2em]">Magenta</span>
           </div>
           <div className="flex items-center gap-2">
             <Link href="/prodotti" className="btn-ghost">Catalogo</Link>
@@ -31,25 +36,25 @@ export default async function HomePage() {
           </div>
         </div>
 
-        {/* Body del hero */}
+        {/* Headline */}
         <div className="flex-1 flex flex-col justify-center px-5 sm:px-8 lg:px-12 py-10 relative overflow-hidden">
-          {/* Ghost text background */}
+          {/* Ghost text */}
           <div
             aria-hidden
-            className="absolute right-[-4vw] top-1/2 -translate-y-1/2 select-none pointer-events-none font-black leading-none"
+            className="absolute right-[-4vw] top-1/2 -translate-y-1/2 select-none pointer-events-none font-black"
             style={{
               fontSize: "clamp(12rem, 35vw, 38rem)",
               color: "transparent",
               WebkitTextStroke: "2px var(--border)",
               letterSpacing: "-0.05em",
+              lineHeight: 1,
             }}
           >
             PANE
           </div>
 
-          {/* Headline */}
           <div className="relative z-10 max-w-5xl">
-            <p className="section-label mb-6">Forno artigianale · Roma</p>
+            <p className="section-label mb-6">Forno artigianale · Magenta</p>
             <h1 className="display-huge" style={{ color: "var(--foreground)" }}>
               Il pane<br />
               <span style={{ color: "var(--accent)", fontStyle: "italic" }}>di una</span><br />
@@ -84,7 +89,62 @@ export default async function HomePage() {
 
 
       {/* ══════════════════════════════════════════════
-          PRODOTTI — griglia editoriale asimmetrica
+          PANE DEL GIORNO — la notizia del giorno
+      ══════════════════════════════════════════════ */}
+      {daily && (
+        <section className="border-b-2" style={{ borderColor: "var(--foreground)" }}>
+          {/* Label */}
+          <div
+            className="flex items-center justify-between px-5 sm:px-8 lg:px-12 py-4 border-b-2"
+            style={{ borderColor: "var(--foreground)", background: "var(--accent)" }}
+          >
+            <span className="text-xs font-black uppercase tracking-[0.3em] text-white">
+              ★ Pane speciale di oggi
+            </span>
+            <span className="text-xs font-black uppercase tracking-[0.2em] text-white opacity-60">
+              Cambia ogni giorno · Fino ad esaurimento
+            </span>
+          </div>
+
+          {/* Corpo */}
+          <div
+            className="grid grid-cols-1 lg:grid-cols-[1fr_auto] items-end px-5 sm:px-8 lg:px-12 py-10 lg:py-16 gap-8"
+            style={{ background: "var(--foreground)" }}
+          >
+            <div>
+              <p className="section-label mb-4" style={{ color: "rgba(253,250,243,0.4)" }}>
+                Oggi al forno
+              </p>
+              <h2
+                className="font-black tracking-tight leading-none"
+                style={{
+                  fontSize: "clamp(2.5rem, 7vw, 7rem)",
+                  color: "var(--background)",
+                }}
+              >
+                {daily.title ?? "Pane speciale"}
+              </h2>
+              {daily.body && (
+                <p
+                  className="mt-5 max-w-xl text-base leading-relaxed"
+                  style={{ color: "rgba(253,250,243,0.55)" }}
+                >
+                  {daily.body}
+                </p>
+              )}
+            </div>
+            <div className="shrink-0">
+              <Link href="/register" className="btn-primary text-base px-10 py-4">
+                Prenota →
+              </Link>
+            </div>
+          </div>
+        </section>
+      )}
+
+
+      {/* ══════════════════════════════════════════════
+          SEMPRE DISPONIBILI — i prodotti fissi
       ══════════════════════════════════════════════ */}
       <section className="border-b-2" style={{ borderColor: "var(--foreground)" }}>
         {/* Header */}
@@ -93,8 +153,8 @@ export default async function HomePage() {
           style={{ borderColor: "var(--border)" }}
         >
           <div className="flex items-baseline gap-5">
-            <span className="display-large" style={{ color: "var(--accent)" }}>01</span>
-            <h2 className="text-2xl font-black uppercase tracking-tight">Dal forno</h2>
+            <span className="display-large" style={{ color: "var(--accent)" }}>02</span>
+            <h2 className="text-2xl font-black uppercase tracking-tight">Sempre qui</h2>
           </div>
           <Link
             href="/prodotti"
@@ -104,106 +164,38 @@ export default async function HomePage() {
           </Link>
         </div>
 
-        {/* Grid: 1 grande (sx) + 3 stack (dx) */}
-        {featured.length > 0 && (
-          <div className="grid grid-cols-1 lg:grid-cols-[1.4fr_1fr]">
-            {/* Card grande */}
-            <article
-              className="relative overflow-hidden group border-b-2 lg:border-b-0 lg:border-r-2"
-              style={{ borderColor: "var(--foreground)", minHeight: "520px" }}
-            >
-              <img
-                src={featured[0]?.images[0]?.url ?? "https://images.unsplash.com/photo-1549931319-a545dcf3bc73?auto=format&fit=crop&w=1200&q=80"}
-                alt={featured[0]?.name ?? "Prodotto"}
-                className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
-              />
+        {/* Prodotti in riga orizzontale */}
+        <div
+          className="grid grid-cols-1 sm:grid-cols-3 divide-y-2 sm:divide-y-0 sm:divide-x-2"
+          style={{ borderColor: "var(--border)" }}
+        >
+          {regulars.map((product) => (
+            <article key={product.id} className="group overflow-hidden">
+              <div className="relative h-48 overflow-hidden">
+                <img
+                  src={product.images[0]?.url ?? "https://images.unsplash.com/photo-1549931319-a545dcf3bc73?auto=format&fit=crop&w=800&q=80"}
+                  alt={product.name}
+                  className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                />
+              </div>
               <div
-                className="absolute inset-0"
-                style={{ background: "linear-gradient(to top, rgba(22,15,6,0.88) 0%, rgba(22,15,6,0.08) 55%)" }}
-              />
-              <div className="absolute bottom-0 left-0 right-0 p-8">
-                <span className="tag-accent">{featured[0]?.category.name}</span>
-                <h3
-                  className="mt-3 text-4xl font-black tracking-tight leading-none"
-                  style={{ color: "#FDFAF3" }}
-                >
-                  {featured[0]?.name}
-                </h3>
-                <p className="mt-2 text-sm" style={{ color: "rgba(253,250,243,0.65)" }}>
-                  {featured[0]?.shortDescription}
+                className="p-6 border-t-2"
+                style={{ borderColor: "var(--border)" }}
+              >
+                <span className="tag">{product.category.name}</span>
+                <h3 className="mt-3 text-xl font-black tracking-tight">{product.name}</h3>
+                <p className="mt-2 text-sm leading-relaxed" style={{ color: "var(--muted)" }}>
+                  {product.shortDescription}
                 </p>
-                <Link
-                  href="/register"
-                  className="mt-5 inline-flex items-center gap-2 text-xs font-black uppercase tracking-widest hover:opacity-60 transition-opacity"
-                  style={{ color: "#FDFAF3" }}
-                >
-                  Prenota →
-                </Link>
               </div>
             </article>
-
-            {/* Stack 3 card */}
-            <div className="divide-y-2" style={{ borderColor: "var(--foreground)" }}>
-              {featured.slice(1, 4).map((product) => (
-                <article
-                  key={product.id}
-                  className="flex group overflow-hidden"
-                  style={{ minHeight: "calc(520px / 3)" }}
-                >
-                  <div className="relative w-28 sm:w-36 shrink-0 overflow-hidden">
-                    <img
-                      src={product.images[0]?.url ?? "https://images.unsplash.com/photo-1549931319-a545dcf3bc73?auto=format&fit=crop&w=400&q=80"}
-                      alt={product.name}
-                      className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
-                    />
-                  </div>
-                  <div
-                    className="flex flex-col justify-center px-5 py-5 flex-1 border-l-2"
-                    style={{ borderColor: "var(--foreground)" }}
-                  >
-                    <span className="tag mb-2">{product.category.name}</span>
-                    <h3 className="text-lg font-black tracking-tight leading-tight">{product.name}</h3>
-                    <p className="mt-1 text-xs leading-relaxed" style={{ color: "var(--muted)" }}>
-                      {product.shortDescription}
-                    </p>
-                  </div>
-                </article>
-              ))}
-            </div>
-          </div>
-        )}
-      </section>
-
-
-      {/* ══════════════════════════════════════════════
-          MANIFESTO — una frase, nient'altro
-      ══════════════════════════════════════════════ */}
-      <section
-        className="px-5 sm:px-8 lg:px-12 py-16 lg:py-24 border-b-2"
-        style={{ borderColor: "var(--foreground)" }}
-      >
-        <blockquote
-          className="font-black leading-tight tracking-tight"
-          style={{
-            fontSize: "clamp(2rem, 5vw, 4.5rem)",
-            color: "var(--foreground)",
-            maxWidth: "22ch",
-          }}
-        >
-          "Forniamo lo stesso pane dal 1978.
-          <span style={{ color: "var(--accent)", fontStyle: "italic" }}> Niente di più."</span>
-        </blockquote>
-        <div className="mt-8 flex items-center gap-4">
-          <Image src="/Logo.jpg" alt="" width={32} height={32} className="rounded opacity-60" />
-          <p className="text-xs font-black uppercase tracking-widest" style={{ color: "var(--muted)" }}>
-            Forno Irma · Roma
-          </p>
+          ))}
         </div>
       </section>
 
 
       {/* ══════════════════════════════════════════════
-          INSTAGRAM — full-bleed link a due pannelli
+          INSTAGRAM — full-bleed
       ══════════════════════════════════════════════ */}
       <section>
         <a
@@ -227,7 +219,7 @@ export default async function HomePage() {
             style={{ background: "var(--sand)" }}
           >
             <p className="text-sm max-w-xs" style={{ color: "var(--muted)" }}>
-              Foto, novità del giorno e specialità stagionali su Instagram.
+              Il pane speciale del giorno, le novità e le foto dal forno ogni mattina.
             </p>
             <span className="text-6xl font-black leading-none shrink-0 ml-8 transition-transform duration-300 group-hover:translate-x-2">
               →
