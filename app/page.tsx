@@ -1,12 +1,15 @@
 import Link from "next/link";
 import Image from "next/image";
-import { getDailySpecial, getVisibleProducts } from "@/lib/data";
+import { getDailySpecial, getVisibleProducts, getBusinessSettings } from "@/lib/data";
+import { OpenStatusBadge } from "@/components/open-status";
 
 export default async function HomePage() {
-  const [daily, products] = await Promise.all([
+  const [daily, products, settings] = await Promise.all([
     getDailySpecial(),
     getVisibleProducts(),
+    getBusinessSettings(),
   ]);
+  const openingHours = (settings?.openingHours as Array<{ day: string; hours: string }> | null) ?? [];
 
   const regulars = products.filter((p) => !p.isSpecial).slice(0, 3);
 
@@ -50,8 +53,13 @@ export default async function HomePage() {
             Lievito madre, farine selezionate, impasto a mano. Prenota online e ritira quando vuoi tu — a Magenta.
           </p>
 
+          {/* Stato apertura */}
+          <div className="mt-6">
+            <OpenStatusBadge openingHours={openingHours} size="sm" />
+          </div>
+
           {/* CTA */}
-          <div className="mt-8 flex flex-wrap justify-center gap-3">
+          <div className="mt-6 flex flex-wrap justify-center gap-3">
             <Link href="/prodotti" className="btn-primary">
               Scopri il catalogo
             </Link>
