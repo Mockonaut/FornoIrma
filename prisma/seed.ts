@@ -18,9 +18,9 @@ async function main() {
       "Ritiro in negozio nelle fasce orarie selezionate. Nessun pagamento online: si paga al ritiro.",
     openingHours: [
       { day: "Lunedì", hours: "Chiuso" },
-      { day: "Martedì – Venerdì", hours: "07:00 – 13:30 / 16:00 – 19:30" },
-      { day: "Sabato", hours: "07:00 – 14:00" },
-      { day: "Domenica", hours: "07:30 – 13:00" },
+      { day: "Martedì – Venerdì", hours: "07:30 – 18:30" },
+      { day: "Sabato", hours: "08:00 – 18:30" },
+      { day: "Domenica", hours: "08:00 – 12:30" },
     ],
   };
   await prisma.businessSettings.upsert({
