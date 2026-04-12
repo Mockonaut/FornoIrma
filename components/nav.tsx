@@ -9,7 +9,7 @@ export async function Nav() {
 
   return (
     <header
-      className="sticky top-0 z-50 border-b-2 bg-[var(--background)]/90 backdrop-blur-md"
+      className="sticky top-0 z-50 border-b bg-[var(--background)]/90 backdrop-blur-md"
       style={{ borderColor: "var(--border)" }}
     >
       <div className="container-shell flex h-16 items-center justify-between gap-4">
