@@ -8,14 +8,20 @@ import slugify from "slugify";
 import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth";
 import { generateReservationCode } from "@/lib/utils";
+import { ReservationStatus } from "@prisma/client";
 
-// ─── Auth ─────────────────────────────────────────────────────────────────────
+// ─── Registrazione ────────────────────────────────────────────────────────────
 
 const RegisterSchema = z.object({
-  name: z.string().min(2),
-  email: z.string().email(),
-  password: z.string().min(8),
+  firstName: z.string().min(2, "Minimo 2 caratteri"),
+  lastName: z.string().min(2, "Minimo 2 caratteri"),
+  email: z.string().email("Email non valida"),
   phone: z.string().optional(),
+  password: z.string().min(8, "Minimo 8 caratteri"),
+  confirmPassword: z.string(),
+}).refine((d) => d.password === d.confirmPassword, {
+  message: "Le password non coincidono",
+  path: ["confirmPassword"],
 });
 
 export async function registerAction(
@@ -23,25 +29,35 @@ export async function registerAction(
   formData: FormData
 ): Promise<{ error?: string }> {
   const parsed = RegisterSchema.safeParse({
-    name: formData.get("name"),
+    firstName: formData.get("firstName"),
+    lastName: formData.get("lastName"),
     email: formData.get("email"),
-    password: formData.get("password"),
     phone: formData.get("phone") || undefined,
+    password: formData.get("password"),
+    confirmPassword: formData.get("confirmPassword"),
   });
-  if (!parsed.success) return { error: "Dati non validi. Controlla i campi." };
 
-  const { name, email, password, phone } = parsed.data;
-  const existing = await prisma.user.findUnique({ where: { email } });
-  if (existing) return { error: "Esiste già un account con questa email." };
+  if (!parsed.success) {
+    const first = parsed.error.errors[0];
+    return { error: first?.message ?? "Dati non validi." };
+  }
+
+  const { firstName, lastName, email, phone, password } = parsed.data;
+  const name = `${firstName} ${lastName}`;
+
+  const existing = await prisma.user.findFirst({
+    where: { OR: [{ email }, ...(phone ? [{ phone }] : [])] },
+  });
+  if (existing) return { error: "Esiste già un account con questa email o numero di telefono." };
 
   await prisma.user.create({
-    data: { name, email, password: await bcrypt.hash(password, 12), phone },
+    data: { name, email, phone, password: await bcrypt.hash(password, 12) },
   });
 
   redirect("/login?registered=1");
 }
 
-// ─── Admin: Categories ────────────────────────────────────────────────────────
+// ─── Admin: Categorie ─────────────────────────────────────────────────────────
 
 export async function createCategoryAction(formData: FormData) {
   const session = await auth();
@@ -60,7 +76,106 @@ export async function createCategoryAction(formData: FormData) {
   revalidatePath("/admin/categorie");
 }
 
-// ─── Reservations ─────────────────────────────────────────────────────────────
+// ─── Admin: Pane del giorno — libreria ───────────────────────────────────────
+
+export async function createBreadTypeAction(formData: FormData) {
+  const session = await auth();
+  if (session?.user?.role !== "ADMIN") return;
+
+  const name = (formData.get("name") as string).trim();
+  const description = (formData.get("description") as string | null)?.trim() || undefined;
+  if (!name) return;
+
+  await prisma.breadType.create({ data: { name, description } });
+  revalidatePath("/admin/pane-del-giorno");
+}
+
+export async function toggleBreadTypeAction(formData: FormData) {
+  const session = await auth();
+  if (session?.user?.role !== "ADMIN") return;
+
+  const id = formData.get("id") as string;
+  const current = await prisma.breadType.findUnique({ where: { id }, select: { isActive: true } });
+  if (!current) return;
+
+  await prisma.breadType.update({ where: { id }, data: { isActive: !current.isActive } });
+  revalidatePath("/admin/pane-del-giorno");
+}
+
+// ─── Admin: Pane del giorno — calendario ─────────────────────────────────────
+
+export async function setDailyScheduleAction(formData: FormData) {
+  const session = await auth();
+  if (session?.user?.role !== "ADMIN") return;
+
+  const breadTypeId = formData.get("breadTypeId") as string;
+  const dateStr = (formData.get("date") as string | null)?.trim();
+  const dowStr = (formData.get("dayOfWeek") as string | null)?.trim();
+
+  if (!breadTypeId) return;
+
+  if (dateStr) {
+    const date = new Date(dateStr);
+    await prisma.dailySchedule.upsert({
+      where: { date },
+      update: { breadTypeId },
+      create: { breadTypeId, date },
+    });
+  } else if (dowStr) {
+    const dayOfWeek = parseInt(dowStr, 10);
+    await prisma.dailySchedule.upsert({
+      where: { dayOfWeek },
+      update: { breadTypeId },
+      create: { breadTypeId, dayOfWeek },
+    });
+  }
+
+  revalidatePath("/");
+  revalidatePath("/admin/pane-del-giorno");
+}
+
+export async function removeDailyScheduleAction(formData: FormData) {
+  const session = await auth();
+  if (session?.user?.role !== "ADMIN") return;
+
+  const id = formData.get("id") as string;
+  if (!id) return;
+
+  await prisma.dailySchedule.delete({ where: { id } });
+  revalidatePath("/");
+  revalidatePath("/admin/pane-del-giorno");
+}
+
+// ─── Utente: cancellazione account ───────────────────────────────────────────
+
+export async function deleteAccountAction(): Promise<{ error?: string }> {
+  const session = await auth();
+  if (!session?.user?.id) return { error: "Non autenticato." };
+
+  await prisma.user.delete({ where: { id: session.user.id } });
+  redirect("/");
+}
+
+// ─── Admin: Stato prenotazione ────────────────────────────────────────────────
+
+export async function updateReservationStatusAction(formData: FormData) {
+  const session = await auth();
+  if (session?.user?.role !== "ADMIN") return;
+
+  const reservationId = formData.get("reservationId") as string;
+  const status = formData.get("status") as ReservationStatus;
+
+  if (!reservationId || !status) return;
+
+  await prisma.reservation.update({
+    where: { id: reservationId },
+    data: { status },
+  });
+
+  revalidatePath("/admin/prenotazioni");
+}
+
+// ─── Prenotazioni utente ──────────────────────────────────────────────────────
 
 const ReservationSchema = z.object({
   pickupDate: z.string().min(1),
@@ -83,7 +198,6 @@ export async function createReservationAction(data: {
 
   const { pickupDate, pickupSlotId, notes, items } = parsed.data;
 
-  // Fetch product names for snapshot
   const productIds = items.map((i) => i.productId);
   const products = await prisma.product.findMany({
     where: { id: { in: productIds }, isVisible: true },

@@ -146,6 +146,34 @@ model ReservationItem {
   product     Product     @relation(fields: [productId], references: [id])
 }
 
+// ─── Pane del giorno ──────────────────────────────────────────────────────────
+
+model BreadType {
+  id          String   @id @default(cuid())
+  name        String
+  description String?  @db.Text
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  schedules DailySchedule[]
+}
+
+model DailySchedule {
+  id          String    @id @default(cuid())
+  breadTypeId String
+  // Exactly one of the two must be set:
+  date        DateTime? @db.Date   // specific date (overrides recurring)
+  dayOfWeek   Int?                 // ISO: 1=Mon … 7=Sun (recurring)
+  notes       String?
+  createdAt   DateTime  @default(now())
+
+  breadType BreadType @relation(fields: [breadTypeId], references: [id], onDelete: Cascade)
+
+  @@unique([date])
+  @@unique([dayOfWeek])
+}
+
 // ─── Contenuti del sito ────────────────────────────────────────────────────────
 
 model SiteContent {

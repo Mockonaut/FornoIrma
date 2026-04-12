@@ -1,28 +1,9 @@
-import { NextResponse } from "next/server";
-import type { NextRequest } from "next/server";
-import { getToken } from "next-auth/jwt";
+import NextAuth from "next-auth";
+import { authConfig } from "@/lib/auth.config";
 
-export async function middleware(request: NextRequest) {
-  const token = await getToken({
-    req: request,
-    secret: process.env.AUTH_SECRET,
-  });
-
-  const { pathname } = request.nextUrl;
-
-  if (!token) {
-    const loginUrl = new URL("/login", request.url);
-    loginUrl.searchParams.set("callbackUrl", pathname);
-    return NextResponse.redirect(loginUrl);
-  }
-
-  // Protegge le route admin
-  if (pathname.startsWith("/admin") && token.role !== "ADMIN") {
-    return NextResponse.redirect(new URL("/", request.url));
-  }
-
-  return NextResponse.next();
-}
+// Middleware leggero: usa solo authConfig (niente bcryptjs, niente Prisma).
+// Il callback `authorized` in authConfig gestisce protezione route e ruoli.
+export default NextAuth(authConfig).auth;
 
 export const config = {
   matcher: ["/profilo/:path*", "/area-clienti/:path*", "/admin/:path*"],

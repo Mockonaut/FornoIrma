@@ -105,14 +105,14 @@ export default async function HomePage() {
                     color: "var(--background)",
                   }}
                 >
-                  {daily.title}
+                  {daily.name}
                 </h2>
-                {daily.body && (
+                {daily.description && (
                   <p
                     className="mt-5 text-base leading-relaxed max-w-lg"
                     style={{ color: "rgba(253,250,243,0.55)" }}
                   >
-                    {daily.body}
+                    {daily.description}
                   </p>
                 )}
               </div>

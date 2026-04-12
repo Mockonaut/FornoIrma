@@ -1,12 +1,15 @@
 import Link from "next/link";
 import { requireAuth } from "@/lib/session";
 import { prisma } from "@/lib/prisma";
+import { DeleteAccountButton } from "@/components/forms/delete-account-button";
+
+export const metadata = { title: "Il mio profilo" };
 
 export default async function ProfilePage() {
   const session = await requireAuth();
   const user = await prisma.user.findUnique({
     where: { id: session.user.id },
-    include: { reservations: true }
+    include: { reservations: true },
   });
 
   return (
@@ -19,7 +22,15 @@ export default async function ProfilePage() {
           <p><strong className="text-[var(--foreground)]">Telefono:</strong> {user?.phone || "Non inserito"}</p>
           <p><strong className="text-[var(--foreground)]">Prenotazioni totali:</strong> {user?.reservations.length ?? 0}</p>
         </div>
+
+        <div className="mt-8 pt-6 border-t" style={{ borderColor: "var(--border)" }}>
+          <p className="text-xs mb-3" style={{ color: "var(--muted)" }}>
+            Vuoi eliminare il tuo account? Tutti i dati e le prenotazioni associate saranno rimossi definitivamente.
+          </p>
+          <DeleteAccountButton />
+        </div>
       </section>
+
       <section className="card p-8">
         <h2 className="text-xl font-semibold">Azioni rapide</h2>
         <div className="mt-5 grid gap-4 sm:grid-cols-2">

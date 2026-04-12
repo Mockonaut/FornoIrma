@@ -1,44 +1,30 @@
 "use client";
 
-import { useActionState } from "react";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { z } from "zod";
+import { useActionState, useState } from "react";
 import { signIn } from "next-auth/react";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
 import { registerAction } from "@/lib/actions";
 
 // ─── Login ────────────────────────────────────────────────────────────────────
-
-const LoginSchema = z.object({
-  email: z.string().email("Email non valida"),
-  password: z.string().min(1, "Inserisci la password"),
-});
-type LoginData = z.infer<typeof LoginSchema>;
 
 export function LoginForm() {
   const router = useRouter();
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
-  const {
-    register,
-    handleSubmit,
-    formState: { errors },
-  } = useForm<LoginData>({ resolver: zodResolver(LoginSchema) });
-
-  const onSubmit = async (data: LoginData) => {
-    setLoading(true);
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
     setError(null);
+    setLoading(true);
+    const fd = new FormData(e.currentTarget);
     const result = await signIn("credentials", {
-      email: data.email,
-      password: data.password,
+      identifier: fd.get("identifier"),
+      password: fd.get("password"),
       redirect: false,
     });
     setLoading(false);
     if (result?.error) {
-      setError("Credenziali non valide. Riprova.");
+      setError("Credenziali non valide. Controlla email (o cellulare) e password.");
     } else {
       router.push("/profilo");
       router.refresh();
@@ -46,19 +32,33 @@ export function LoginForm() {
   };
 
   return (
-    <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+    <form onSubmit={handleSubmit} className="space-y-4">
       <div>
-        <label className="label mb-1.5" htmlFor="email">Email</label>
-        <input id="email" type="email" className="input" placeholder="nome@esempio.it" {...register("email")} />
-        {errors.email && <p className="error-text mt-1">{errors.email.message}</p>}
+        <label className="label" htmlFor="identifier">Email o numero di cellulare</label>
+        <input
+          id="identifier"
+          name="identifier"
+          type="text"
+          className="input"
+          placeholder="nome@esempio.it oppure +39 333 1234567"
+          required
+          autoComplete="username"
+        />
       </div>
       <div>
-        <label className="label mb-1.5" htmlFor="password">Password</label>
-        <input id="password" type="password" className="input" placeholder="••••••••" {...register("password")} />
-        {errors.password && <p className="error-text mt-1">{errors.password.message}</p>}
+        <label className="label" htmlFor="password">Password</label>
+        <input
+          id="password"
+          name="password"
+          type="password"
+          className="input"
+          placeholder="••••••••"
+          required
+          autoComplete="current-password"
+        />
       </div>
       {error && <p className="error-text">{error}</p>}
-      <button type="submit" disabled={loading} className="btn-primary w-full">
+      <button type="submit" disabled={loading} className="btn-primary w-full justify-center">
         {loading ? "Accesso in corso…" : "Accedi"}
       </button>
     </form>
@@ -67,46 +67,117 @@ export function LoginForm() {
 
 // ─── Register ─────────────────────────────────────────────────────────────────
 
-const RegisterSchema = z.object({
-  name: z.string().min(2, "Inserisci il tuo nome (min. 2 caratteri)"),
-  email: z.string().email("Email non valida"),
-  password: z.string().min(8, "Minimo 8 caratteri"),
-  phone: z.string().optional(),
-});
-type RegisterData = z.infer<typeof RegisterSchema>;
-
 export function RegisterForm() {
   const [state, action, pending] = useActionState(registerAction, null);
 
-  const {
-    register,
-    formState: { errors },
-  } = useForm<RegisterData>({ resolver: zodResolver(RegisterSchema) });
-
   return (
     <form action={action} className="space-y-4">
-      <div>
-        <label className="label mb-1.5" htmlFor="name">Nome e cognome</label>
-        <input id="name" name="name" type="text" className="input" placeholder="Mario Rossi" required />
-        {errors.name && <p className="error-text mt-1">{errors.name.message}</p>}
+      {/* Nome e cognome affiancati */}
+      <div className="grid grid-cols-2 gap-3">
+        <div>
+          <label className="label" htmlFor="firstName">Nome</label>
+          <input
+            id="firstName"
+            name="firstName"
+            type="text"
+            className="input"
+            placeholder="Mario"
+            required
+            autoComplete="given-name"
+          />
+        </div>
+        <div>
+          <label className="label" htmlFor="lastName">Cognome</label>
+          <input
+            id="lastName"
+            name="lastName"
+            type="text"
+            className="input"
+            placeholder="Rossi"
+            required
+            autoComplete="family-name"
+          />
+        </div>
       </div>
+
       <div>
-        <label className="label mb-1.5" htmlFor="email">Email</label>
-        <input id="email" name="email" type="email" className="input" placeholder="nome@esempio.it" required />
-        {errors.email && <p className="error-text mt-1">{errors.email.message}</p>}
+        <label className="label" htmlFor="email">Email</label>
+        <input
+          id="email"
+          name="email"
+          type="email"
+          className="input"
+          placeholder="nome@esempio.it"
+          required
+          autoComplete="email"
+        />
       </div>
+
       <div>
-        <label className="label mb-1.5" htmlFor="phone">Telefono (opzionale)</label>
-        <input id="phone" name="phone" type="tel" className="input" placeholder="+39 333 1234567" />
+        <label className="label" htmlFor="phone">
+          Numero di cellulare <span style={{ color: "var(--muted)", fontWeight: 400 }}>(opzionale — puoi usarlo per accedere)</span>
+        </label>
+        <input
+          id="phone"
+          name="phone"
+          type="tel"
+          className="input"
+          placeholder="+39 333 1234567"
+          autoComplete="tel"
+        />
       </div>
+
       <div>
-        <label className="label mb-1.5" htmlFor="password">Password</label>
-        <input id="password" name="password" type="password" className="input" placeholder="Minimo 8 caratteri" required />
-        {errors.password && <p className="error-text mt-1">{errors.password.message}</p>}
+        <label className="label" htmlFor="password">Password</label>
+        <input
+          id="password"
+          name="password"
+          type="password"
+          className="input"
+          placeholder="Minimo 8 caratteri"
+          required
+          autoComplete="new-password"
+        />
       </div>
-      {state?.error && <p className="error-text">{state.error}</p>}
-      <button type="submit" disabled={pending} className="btn-primary w-full">
-        {pending ? "Registrazione…" : "Crea account"}
+
+      <div>
+        <label className="label" htmlFor="confirmPassword">Conferma password</label>
+        <input
+          id="confirmPassword"
+          name="confirmPassword"
+          type="password"
+          className="input"
+          placeholder="Ripeti la password"
+          required
+          autoComplete="new-password"
+        />
+      </div>
+
+      <div className="flex items-start gap-2">
+        <input
+          id="privacyConsent"
+          name="privacyConsent"
+          type="checkbox"
+          required
+          className="mt-1 h-4 w-4 shrink-0 accent-[var(--accent)]"
+        />
+        <label htmlFor="privacyConsent" className="text-sm" style={{ color: "var(--muted)" }}>
+          Ho letto e accetto la{" "}
+          <a href="/privacy" target="_blank" className="underline" style={{ color: "var(--accent)" }}>
+            Privacy Policy
+          </a>
+          . Acconsento al trattamento dei miei dati per la gestione delle prenotazioni.
+        </label>
+      </div>
+
+      {state?.error && (
+        <div className="rounded-xl p-3 text-sm" style={{ background: "var(--accent-light)", color: "var(--accent)" }}>
+          {state.error}
+        </div>
+      )}
+
+      <button type="submit" disabled={pending} className="btn-primary w-full justify-center">
+        {pending ? "Registrazione in corso…" : "Crea account"}
       </button>
     </form>
   );

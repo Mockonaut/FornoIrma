@@ -1,4 +1,14 @@
+import type { Metadata } from "next";
 import { getHomeContent } from "@/lib/data";
+
+export const metadata: Metadata = {
+  title: "Chi siamo",
+  description: "La storia di Forno Irma a Magenta: pane artigianale con passione e ingredienti selezionati ogni giorno.",
+  openGraph: {
+    title: "Chi siamo | Forno Irma",
+    description: "La storia di Forno Irma a Magenta: pane artigianale con passione e ingredienti selezionati ogni giorno.",
+  },
+};
 
 export default async function AboutPage() {
   const content = await getHomeContent();

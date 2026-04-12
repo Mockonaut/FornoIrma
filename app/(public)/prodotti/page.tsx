@@ -1,5 +1,18 @@
+import type { Metadata } from "next";
 import Link from "next/link";
+import Image from "next/image";
 import { getPublicCategories, getVisibleProducts } from "@/lib/data";
+
+export const metadata: Metadata = {
+  title: "Prodotti",
+  description: "Scopri il catalogo di Forno Irma: pane bianco, integrale, pan bauletto, dolci e specialità artigianali disponibili per prenotazione.",
+  openGraph: {
+    title: "Prodotti | Forno Irma",
+    description: "Scopri il catalogo di Forno Irma: pane, dolci e specialità artigianali disponibili per prenotazione.",
+  },
+};
+
+const FALLBACK_IMG = "https://images.unsplash.com/photo-1517433670267-08bbd4be890f?auto=format&fit=crop&w=1200&q=80";
 
 export default async function ProductsPage({ searchParams }: { searchParams: Promise<{ category?: string }> }) {
   const params = await searchParams;
@@ -26,7 +39,15 @@ export default async function ProductsPage({ searchParams }: { searchParams: Pro
       <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
         {products.map((product) => (
           <article key={product.id} className="card overflow-hidden">
-            <img src={product.images[0]?.url ?? "https://images.unsplash.com/photo-1517433670267-08bbd4be890f?auto=format&fit=crop&w=1200&q=80"} alt={product.name} className="h-56 w-full object-cover" />
+            <div className="relative h-56 w-full">
+              <Image
+                src={product.images[0]?.url ?? FALLBACK_IMG}
+                alt={product.name}
+                fill
+                className="object-cover"
+                sizes="(max-width: 768px) 100vw, (max-width: 1280px) 50vw, 33vw"
+              />
+            </div>
             <div className="space-y-3 p-5">
               <div className="flex flex-wrap gap-2">
                 <span className="rounded-full bg-stone-100 px-3 py-1 text-xs font-medium">{product.category.name}</span>

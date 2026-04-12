@@ -1,4 +1,14 @@
+import type { Metadata } from "next";
 import { getBusinessSettings } from "@/lib/data";
+
+export const metadata: Metadata = {
+  title: "Contatti",
+  description: "Dove trovarci a Magenta, orari di apertura e recapiti di Forno Irma.",
+  openGraph: {
+    title: "Contatti | Forno Irma",
+    description: "Dove trovarci a Magenta, orari di apertura e recapiti di Forno Irma.",
+  },
+};
 
 export default async function ContactsPage() {
   const settings = await getBusinessSettings();
@@ -29,7 +39,7 @@ export default async function ContactsPage() {
       </section>
       <section className="card p-3">
         {settings?.mapEmbedUrl ? (
-          <iframe src={settings.mapEmbedUrl} className="h-[520px] w-full rounded-[1.5rem] border-0" loading="lazy" />
+          <iframe src={settings.mapEmbedUrl} className="h-[520px] w-full rounded-[1.5rem] border-0" loading="lazy" title="Mappa Forno Irma" />
         ) : (
           <div className="flex h-[520px] items-center justify-center rounded-[1.5rem] bg-stone-100 text-[var(--muted)]">
             Placeholder mappa configurabile

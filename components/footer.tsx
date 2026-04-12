@@ -79,7 +79,11 @@ export function Footer() {
         style={{ borderColor: "var(--border)" }}
       >
         <p>© {new Date().getFullYear()} Forno Irma · Magenta — Tutti i diritti riservati.</p>
-        <p className="opacity-50">Fatto con ❤️ nel quartiere</p>
+        <div className="flex items-center gap-4 opacity-60">
+          <Link href="/privacy" className="hover:opacity-100 transition-opacity">Privacy Policy</Link>
+          <span>·</span>
+          <p>Fatto con ❤️ nel quartiere</p>
+        </div>
       </div>
     </footer>
   );
