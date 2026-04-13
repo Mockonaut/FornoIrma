@@ -14,6 +14,8 @@ async function main() {
     phone: "+39 02 9790000",
     email: "info@fornoirma.it",
     instagramUrl: "https://www.instagram.com/forno_irma/",
+    mapEmbedUrl:
+      "https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d699.5539260731015!2d8.881201369666657!3d45.46545853876144!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x4786f1b814d9116d%3A0x1decc2c46c2dee7a!2sForno%20Irma!5e0!3m2!1sit!2sit!4v1776065097602!5m2!1sit!2sit",
     pickupInstructions:
       "Ritiro in negozio nelle fasce orarie selezionate. Nessun pagamento online: si paga al ritiro.",
     openingHours: [
@@ -32,15 +34,22 @@ async function main() {
   // ─── Site Content ────────────────────────────────────────────────────────────
   await prisma.siteContent.upsert({
     where: { key: "ABOUT_PAGE" },
-    update: {},
+    update: {
+      title: "La storia di Forno Irma",
+      body: `Forno Irma è una bakery artigianale aperta ad aprile 2026 a Magenta, a pochi chilometri da Milano. Dietro al bancone ci sono tre amici con un passato nella grande ristorazione: Michele Ruggiero (formatosi a Noma e Juno the Bakery a Copenaghen), Matteo Andreotti (già pastry chef a Tickets di Barcellona e sous chef all'Aalto) e Laura Onofrio, moglie di Matteo, con esperienze in cucine come Disfrutar e Le Calandre.
+
+Dopo anni di alta cucina tra Italia, Spagna, Danimarca e le Isole Faroe, hanno scelto di aprire qualcosa di diverso: un luogo di ricerca quotidiana, più a misura di vita. Il risultato è uno spazio di meno di 70 metri quadri con laboratorio a vista, dove il pane si fa con lievito madre e farine selezionate e la pasticceria mescola influenze italiane e nordiche.
+
+Il nome Irma? Un omaggio ironico alla catena di supermercati danese che frequentavano quando vivevano a Copenaghen. Non una nonna, non una tradizione di famiglia — ma una storia tutta loro.`,
+    },
     create: {
       key: "ABOUT_PAGE",
       title: "La storia di Forno Irma",
-      body: `Forno Irma è il forno di riferimento del quartiere a Magenta. Ogni mattina lo stesso rito: farina, acqua, lievito naturale e le mani di chi conosce il mestiere. Nessun additivo, nessuna fretta.
+      body: `Forno Irma è una bakery artigianale aperta ad aprile 2026 a Magenta, a pochi chilometri da Milano. Dietro al bancone ci sono tre amici con un passato nella grande ristorazione: Michele Ruggiero (formatosi a Noma e Juno the Bakery a Copenaghen), Matteo Andreotti (già pastry chef a Tickets di Barcellona e sous chef all'Aalto) e Laura Onofrio, moglie di Matteo, con esperienze in cucine come Disfrutar e Le Calandre.
 
-Il catalogo è volutamente semplice: due pani classici sempre presenti, il pan bauletto per i più golosi, i dolci del giorno e un pane speciale che cambia ogni mattina — perché la monotonia non fa per noi.
+Dopo anni di alta cucina tra Italia, Spagna, Danimarca e le Isole Faroe, hanno scelto di aprire qualcosa di diverso: un luogo di ricerca quotidiana, più a misura di vita. Il risultato è uno spazio di meno di 70 metri quadri con laboratorio a vista, dove il pane si fa con lievito madre e farine selezionate e la pasticceria mescola influenze italiane e nordiche.
 
-Siamo un forno di quartiere. Ci piace conoscere i nostri clienti per nome e sapere cosa si aspettano quando entrano. La prenotazione online è il nostro modo di stare al passo con i tempi senza perdere il carattere artigianale che ci contraddistingue.`,
+Il nome Irma? Un omaggio ironico alla catena di supermercati danese che frequentavano quando vivevano a Copenaghen. Non una nonna, non una tradizione di famiglia — ma una storia tutta loro.`,
     },
   });
 
