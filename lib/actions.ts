@@ -5,11 +5,12 @@ import { redirect } from "next/navigation";
 import { z } from "zod";
 import bcrypt from "bcryptjs";
 import slugify from "slugify";
+import { randomBytes } from "crypto";
 import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth";
 import { generateReservationCode } from "@/lib/utils";
 import { ReservationStatus } from "@prisma/client";
-import { sendWelcomeEmail } from "@/lib/email";
+import { sendVerificationEmail } from "@/lib/email";
 import { uploadProductImage, deleteProductImage } from "@/lib/supabase-storage";
 import { notifyAdminsNewReservation, notifyUserReservationStatus } from "@/lib/notifications";
 import { NotificationType } from "@prisma/client";
@@ -54,12 +55,19 @@ export async function registerAction(
   });
   if (existing) return { error: "Esiste già un account con questa email o numero di telefono." };
 
-  await prisma.user.create({
+  const user = await prisma.user.create({
     data: { name, email, phone, password: await bcrypt.hash(password, 12) },
   });
 
-  // Email di benvenuto — awaited prima del redirect (serverless termina subito dopo)
-  await sendWelcomeEmail(email, firstName).catch(() => {});
+  // Crea token di verifica email (scade in 24h)
+  const token = randomBytes(32).toString("hex");
+  const expires = new Date(Date.now() + 24 * 60 * 60 * 1000);
+  await prisma.verificationToken.create({
+    data: { identifier: user.email!, token, expires },
+  });
+
+  // Invia email di verifica
+  await sendVerificationEmail(email, firstName, token).catch(() => {});
 
   redirect("/login?registered=1");
 }

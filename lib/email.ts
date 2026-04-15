@@ -73,12 +73,37 @@ const btn = (text: string, href: string) =>
 const muted = (text: string) =>
   `<p style="margin:16px 0 0;font-size:12px;color:#9C8578;font-family:Arial,sans-serif;">${text}</p>`;
 
-// ─── Email: benvenuto nuova registrazione ────────────────────────────────────
+// ─── Email: verifica indirizzo email ─────────────────────────────────────────
+
+export async function sendVerificationEmail(to: string, firstName: string, token: string) {
+  const verifyUrl = `${SITE}/api/auth/verify-email?token=${token}`;
+
+  const body = `
+    ${h1(`Ciao, ${firstName}!`)}
+    ${p("Grazie per esserti registrato al Forno Irma. Per attivare il tuo account e iniziare a prenotare, conferma il tuo indirizzo email cliccando il pulsante qui sotto.")}
+    ${btn("Conferma la tua email", verifyUrl)}
+    ${p("Il link è valido per <strong>24 ore</strong>. Se non ti sei registrato tu, ignora questa email.")}
+    ${muted("Hai ricevuto questa email perché qualcuno ha usato questo indirizzo per registrarsi su Forno Irma.")}
+  `;
+
+  // In sviluppo senza dominio verificato, Resend accetta solo l'email dell'account owner.
+  // Rimuovere DEV_EMAIL_OVERRIDE quando il dominio è verificato su resend.com/domains.
+  const recipient = process.env.DEV_EMAIL_OVERRIDE ?? to;
+
+  return resend.emails.send({
+    from: FROM,
+    to: recipient,
+    subject: "Conferma la tua email — Forno Irma",
+    html: baseTemplate(body),
+  });
+}
+
+// ─── Email: benvenuto dopo verifica ──────────────────────────────────────────
 
 export async function sendWelcomeEmail(to: string, firstName: string) {
   const body = `
     ${h1(`Benvenuto, ${firstName}!`)}
-    ${p("Sei ufficialmente parte della famiglia di Forno Irma. Da adesso puoi prenotare il tuo pane preferito online e ritirarlo direttamente da noi a Magenta — quando fa comodo a te.")}
+    ${p("Il tuo account è attivo. Da adesso puoi prenotare il tuo pane preferito online e ritirarlo direttamente da noi a Magenta — quando fa comodo a te.")}
     ${p("Ecco cosa puoi fare subito:")}
     <ul style="margin:0 0 20px;padding-left:20px;color:#6B5344;font-size:15px;line-height:2;">
       <li>Sfoglia il nostro <a href="${SITE}/prodotti" style="color:#B87620;">catalogo prodotti</a></li>
@@ -86,11 +111,9 @@ export async function sendWelcomeEmail(to: string, firstName: string) {
       <li>Fai la tua prima prenotazione in pochi clic</li>
     </ul>
     ${btn("Vai alla tua area personale", `${SITE}/profilo`)}
-    ${muted("Hai ricevuto questa email perché ti sei registrato su forno-irma.vercel.app. Se non sei stato tu, ignora questo messaggio.")}
+    ${muted("Hai ricevuto questa email perché il tuo account su Forno Irma è stato attivato.")}
   `;
 
-  // In sviluppo senza dominio verificato, Resend accetta solo l'email dell'account owner.
-  // Rimuovere DEV_EMAIL_OVERRIDE quando il dominio è verificato su resend.com/domains.
   const recipient = process.env.DEV_EMAIL_OVERRIDE ?? to;
 
   return resend.emails.send({
