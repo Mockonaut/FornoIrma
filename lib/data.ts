@@ -8,7 +8,10 @@ import { prisma } from "@/lib/prisma";
 
 export const getPublicCategories = unstable_cache(
   () => prisma.category.findMany({
-    where: { isVisible: true },
+    where: {
+      isVisible: true,
+      products: { some: { isVisible: true } },
+    },
     orderBy: { sortOrder: "asc" },
   }),
   ["public-categories"],

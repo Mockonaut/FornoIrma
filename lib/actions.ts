@@ -279,3 +279,20 @@ export async function upsertProductImageAction(formData: FormData) {
   revalidatePath("/admin/prodotti");
   revalidatePath("/prodotti");
 }
+
+export async function toggleProductVisibilityAction(formData: FormData) {
+  const session = await auth();
+  if (session?.user?.role !== "ADMIN") return;
+
+  const productId = formData.get("productId") as string;
+  const product = await prisma.product.findUnique({ where: { id: productId }, select: { isVisible: true } });
+  if (!product) return;
+
+  await prisma.product.update({
+    where: { id: productId },
+    data: { isVisible: !product.isVisible },
+  });
+
+  revalidatePath("/admin/prodotti");
+  revalidatePath("/prodotti");
+}

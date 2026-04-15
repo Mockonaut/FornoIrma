@@ -1,6 +1,7 @@
 import { requireAdmin } from "@/lib/session";
 import { prisma } from "@/lib/prisma";
 import { ProductImageUpload } from "@/components/admin/product-image-upload";
+import { toggleProductVisibilityAction } from "@/lib/actions";
 
 export const metadata = { title: "Prodotti — Gestione" };
 
@@ -42,12 +43,19 @@ export default async function AdminProductsPage() {
               </p>
             </div>
 
-            {/* Badge stato */}
+            {/* Badge stato + toggle visibilità */}
             <div className="flex items-center gap-2 shrink-0">
               {p.isSpecial && <span className="tag-accent">Speciale</span>}
               {p.isSeasonal && <span className="tag-amber">Stagionale</span>}
-              {!p.isVisible && <span className="tag">Nascosto</span>}
-              {p.isVisible && !p.isSpecial && !p.isSeasonal && <span className="tag">Visibile</span>}
+              <form action={toggleProductVisibilityAction}>
+                <input type="hidden" name="productId" value={p.id} />
+                <button
+                  className="btn-ghost text-xs py-1 px-3"
+                  style={p.isVisible ? { color: "var(--muted)" } : { color: "var(--accent)" }}
+                >
+                  {p.isVisible ? "Nascondi" : "Mostra"}
+                </button>
+              </form>
             </div>
           </div>
         ))}
