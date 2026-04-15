@@ -22,9 +22,10 @@ model User {
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
 
-  accounts     Account[]
-  sessions     Session[]
-  reservations Reservation[]
+  accounts      Account[]
+  sessions      Session[]
+  reservations  Reservation[]
+  notifications Notification[]
 }
 
 model Account {
@@ -196,6 +197,23 @@ model BusinessSettings {
   updatedAt          DateTime @updatedAt
 }
 
+// ─── Notifiche ────────────────────────────────────────────────────────────────
+
+model Notification {
+  id        String           @id @default(cuid())
+  userId    String
+  type      NotificationType
+  title     String
+  body      String?
+  linkUrl   String?
+  isRead    Boolean          @default(false)
+  createdAt DateTime         @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, isRead])
+}
+
 // ─── Enums ────────────────────────────────────────────────────────────────────
 
 enum Role {
@@ -209,4 +227,11 @@ enum ReservationStatus {
   READY
   COMPLETED
   CANCELLED
+}
+
+enum NotificationType {
+  NEW_RESERVATION      // per admin: nuova prenotazione ricevuta
+  RESERVATION_CONFIRMED // per utente: prenotazione confermata
+  RESERVATION_READY     // per utente: ordine pronto per il ritiro
+  RESERVATION_CANCELLED // per utente: prenotazione annullata
 }

@@ -2,6 +2,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { auth } from "@/lib/auth";
 import { SignOutButton } from "@/components/sign-out-button";
+import { NotificationBell } from "@/components/notification-bell";
 
 export async function Nav() {
   const session = await auth();
@@ -87,6 +88,7 @@ export async function Nav() {
                   <span className="hidden sm:inline">Il mio profilo</span>
                 </Link>
               )}
+              <NotificationBell userId={user.id!} />
               <SignOutButton />
             </>
           ) : (

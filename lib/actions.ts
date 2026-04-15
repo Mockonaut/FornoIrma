@@ -11,6 +11,8 @@ import { generateReservationCode } from "@/lib/utils";
 import { ReservationStatus } from "@prisma/client";
 import { sendWelcomeEmail } from "@/lib/email";
 import { uploadProductImage, deleteProductImage } from "@/lib/supabase-storage";
+import { notifyAdminsNewReservation, notifyUserReservationStatus } from "@/lib/notifications";
+import { NotificationType } from "@prisma/client";
 
 // ─── Registrazione ────────────────────────────────────────────────────────────
 
@@ -192,10 +194,27 @@ export async function updateReservationStatusAction(formData: FormData) {
 
   if (!reservationId || !status) return;
 
-  await prisma.reservation.update({
+  const reservation = await prisma.reservation.update({
     where: { id: reservationId },
     data: { status },
+    select: { code: true, userId: true },
   });
+
+  // Notifica in-app all'utente per i cambi di stato rilevanti
+  const notifyMap: Partial<Record<ReservationStatus, NotificationType>> = {
+    CONFIRMED: NotificationType.RESERVATION_CONFIRMED,
+    READY: NotificationType.RESERVATION_READY,
+    CANCELLED: NotificationType.RESERVATION_CANCELLED,
+  };
+  const notifType = notifyMap[status];
+  if (notifType) {
+    await notifyUserReservationStatus(
+      reservation.userId,
+      reservation.code,
+      notifType as "RESERVATION_CONFIRMED" | "RESERVATION_READY" | "RESERVATION_CANCELLED",
+      "/area-clienti/prenotazioni"
+    ).catch(() => null);
+  }
 
   revalidatePath("/admin/prenotazioni");
 }
@@ -247,6 +266,12 @@ export async function createReservationAction(data: {
     },
   });
 
+  // Notifica in-app a tutti gli admin
+  await notifyAdminsNewReservation(
+    reservation.code,
+    `/admin/prenotazioni`
+  ).catch(() => null);
+
   revalidatePath("/area-clienti/prenotazioni");
   return { code: reservation.code };
 }
@@ -295,4 +320,18 @@ export async function toggleProductVisibilityAction(formData: FormData) {
 
   revalidatePath("/admin/prodotti");
   revalidatePath("/prodotti");
+}
+
+// ─── Notifiche ────────────────────────────────────────────────────────────────
+
+export async function markNotificationsReadAction() {
+  const session = await auth();
+  if (!session?.user?.id) return;
+
+  await prisma.notification.updateMany({
+    where: { userId: session.user.id, isRead: false },
+    data: { isRead: true },
+  });
+
+  revalidatePath("/notifiche");
 }
