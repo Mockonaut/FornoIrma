@@ -1,7 +1,11 @@
 import Link from "next/link";
 import Image from "next/image";
+import { auth } from "@/lib/auth";
 
-export function Footer() {
+export async function Footer() {
+  const session = await auth();
+  const user = session?.user;
+  const isAdmin = user?.role === "ADMIN";
   return (
     <footer
       className="border-t-2 mt-8"
@@ -58,18 +62,30 @@ export function Footer() {
             Account
           </p>
           <ul className="space-y-2 text-sm">
-            {[
-              { href: "/login", label: "Accedi" },
-              { href: "/register", label: "Registrati" },
-              { href: "/area-clienti/prenotazioni", label: "Le mie prenotazioni" },
-              { href: "/profilo", label: "Profilo" },
-            ].map(({ href, label }) => (
-              <li key={href}>
-                <Link href={href} className="hover:text-[var(--foreground)] transition-colors font-medium">
-                  {label}
-                </Link>
-              </li>
-            ))}
+            {user ? (
+              <>
+                <li>
+                  <Link href="/profilo" className="hover:text-[var(--foreground)] transition-colors font-medium">Profilo</Link>
+                </li>
+                <li>
+                  <Link href="/area-clienti/prenotazioni" className="hover:text-[var(--foreground)] transition-colors font-medium">Le mie prenotazioni</Link>
+                </li>
+                {isAdmin && (
+                  <li>
+                    <Link href="/admin" className="hover:text-[var(--foreground)] transition-colors font-medium">Gestione</Link>
+                  </li>
+                )}
+              </>
+            ) : (
+              <>
+                <li>
+                  <Link href="/login" className="hover:text-[var(--foreground)] transition-colors font-medium">Accedi</Link>
+                </li>
+                <li>
+                  <Link href="/register" className="hover:text-[var(--foreground)] transition-colors font-medium">Registrati</Link>
+                </li>
+              </>
+            )}
           </ul>
         </div>
       </div>
