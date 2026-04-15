@@ -3,6 +3,7 @@ import Image from "next/image";
 import { getBusinessSettings } from "@/lib/data";
 import { auth } from "@/lib/auth";
 
+export const dynamic = "force-dynamic";
 export const metadata = { title: "Prenota" };
 
 export default async function BookingInfoPage() {
