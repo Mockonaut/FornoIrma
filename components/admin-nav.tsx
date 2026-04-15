@@ -38,13 +38,22 @@ export function AdminNav() {
             </Link>
           );
         })}
-        <Link
-          href="/"
-          className="ml-auto shrink-0 text-xs px-3 py-2 rounded-full whitespace-nowrap transition-colors hover:text-[var(--foreground)]"
-          style={{ color: "var(--muted)" }}
-        >
-          ← Sito
-        </Link>
+        <div className="ml-auto flex items-center gap-1 shrink-0">
+          <Link
+            href="/profilo"
+            className="shrink-0 text-xs px-3 py-2 rounded-full whitespace-nowrap transition-colors hover:text-[var(--foreground)]"
+            style={{ color: "var(--muted)" }}
+          >
+            Profilo
+          </Link>
+          <Link
+            href="/"
+            className="shrink-0 text-xs px-3 py-2 rounded-full whitespace-nowrap transition-colors hover:text-[var(--foreground)]"
+            style={{ color: "var(--muted)" }}
+          >
+            ← Sito
+          </Link>
+        </div>
       </div>
     </div>
   );
