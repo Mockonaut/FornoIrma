@@ -1,3 +1,4 @@
+import { redirect } from "next/navigation";
 import Link from "next/link";
 import { requireAuth } from "@/lib/session";
 import { prisma } from "@/lib/prisma";
@@ -7,6 +8,10 @@ export const metadata = { title: "Il mio profilo" };
 
 export default async function ProfilePage() {
   const session = await requireAuth();
+
+  // Admin non ha un'area personale — va alla gestione
+  if (session.user.role === "ADMIN") redirect("/admin");
+
   const user = await prisma.user.findUnique({
     where: { id: session.user.id },
     include: { reservations: true },

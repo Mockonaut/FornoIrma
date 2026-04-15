@@ -12,6 +12,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
     { href: "/admin/prenotazioni", label: "Prenotazioni" },
     { href: "/admin/categorie", label: "Categorie" },
     { href: "/admin/prodotti", label: "Prodotti" },
+    { href: "/admin/utenti", label: "Utenti" },
   ];
 
   return (

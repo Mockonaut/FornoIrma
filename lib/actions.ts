@@ -156,6 +156,26 @@ export async function deleteAccountAction(): Promise<{ error?: string }> {
   redirect("/");
 }
 
+// ─── Admin: Gestione ruoli utenti ────────────────────────────────────────────
+
+export async function toggleUserRoleAction(formData: FormData) {
+  const session = await auth();
+  if (session?.user?.role !== "ADMIN") return;
+
+  const userId = formData.get("userId") as string;
+  if (!userId || userId === session.user.id) return; // non puoi retrocedere te stesso
+
+  const user = await prisma.user.findUnique({ where: { id: userId }, select: { role: true } });
+  if (!user) return;
+
+  await prisma.user.update({
+    where: { id: userId },
+    data: { role: user.role === "ADMIN" ? "USER" : "ADMIN" },
+  });
+
+  revalidatePath("/admin/utenti");
+}
+
 // ─── Admin: Stato prenotazione ────────────────────────────────────────────────
 
 export async function updateReservationStatusAction(formData: FormData) {

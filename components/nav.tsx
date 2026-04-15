@@ -6,6 +6,7 @@ import { SignOutButton } from "@/components/sign-out-button";
 export async function Nav() {
   const session = await auth();
   const user = session?.user;
+  const isAdmin = user?.role === "ADMIN";
 
   return (
     <header
@@ -21,7 +22,7 @@ export async function Nav() {
           </span>
         </Link>
 
-        {/* Nav links */}
+        {/* Nav links — desktop */}
         <nav className="hidden items-center gap-1 md:flex">
           {[
             { href: "/prodotti", label: "Prodotti" },
@@ -40,25 +41,42 @@ export async function Nav() {
           ))}
         </nav>
 
-        {/* Auth */}
+        {/* Auth area */}
         <div className="flex items-center gap-2 shrink-0">
           {user ? (
             <>
-              {/* Link profilo — mostra l'email abbreviata, non il nome (evita "Admin") */}
-              <Link href="/profilo" className="btn-ghost text-xs">
-                Il mio profilo
-              </Link>
-              {/* Link gestione — solo per admin */}
-              {user.role === "ADMIN" && (
+              {isAdmin ? (
+                /* Admin: solo link gestione + logout */
                 <Link href="/admin" className="btn-ghost text-xs" style={{ color: "var(--accent)" }}>
                   ⚙ Gestione
+                </Link>
+              ) : (
+                /* Utente normale: icona profilo (sempre visibile) */
+                <Link
+                  href="/profilo"
+                  className="btn-ghost text-xs flex items-center gap-1.5"
+                  aria-label="Il mio profilo"
+                >
+                  {/* Icona persona */}
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+                    <circle cx="12" cy="7" r="4"/>
+                  </svg>
+                  <span className="hidden sm:inline">Il mio profilo</span>
                 </Link>
               )}
               <SignOutButton />
             </>
           ) : (
             <>
-              <Link href="/login" className="btn-ghost text-xs hidden sm:inline-flex">Accedi</Link>
+              {/* Accedi: sempre visibile (icona su mobile, testo su desktop) */}
+              <Link href="/login" className="btn-ghost text-xs flex items-center gap-1.5" aria-label="Accedi">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+                  <circle cx="12" cy="7" r="4"/>
+                </svg>
+                <span className="hidden sm:inline">Accedi</span>
+              </Link>
               <Link href="/register" className="btn-primary text-xs">Registrati</Link>
             </>
           )}
