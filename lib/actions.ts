@@ -9,6 +9,7 @@ import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth";
 import { generateReservationCode } from "@/lib/utils";
 import { ReservationStatus } from "@prisma/client";
+import { sendWelcomeEmail } from "@/lib/email";
 
 // ─── Registrazione ────────────────────────────────────────────────────────────
 
@@ -53,6 +54,9 @@ export async function registerAction(
   await prisma.user.create({
     data: { name, email, phone, password: await bcrypt.hash(password, 12) },
   });
+
+  // Email di benvenuto — fire and forget, non blocca il redirect
+  sendWelcomeEmail(email, firstName).catch(() => {});
 
   redirect("/login?registered=1");
 }
