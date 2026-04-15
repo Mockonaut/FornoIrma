@@ -407,9 +407,9 @@ export async function saveOpeningHoursAction(formData: FormData) {
   const session = await auth();
   if (session?.user?.role !== "ADMIN") return;
 
-  const days = ["Lunedì", "Martedì – Venerdì", "Sabato", "Domenica"];
+  const days = ["Lunedì", "Martedì", "Mercoledì", "Giovedì", "Venerdì", "Sabato", "Domenica"];
   const openingHours = days.map((day) => {
-    const key = day.replace(/\s*[–-]\s*/g, "_").toLowerCase();
+    const key = day.toLowerCase();
     const closed = formData.get(`closed_${key}`) === "on";
     const open = formData.get(`open_${key}`) as string;
     const close = formData.get(`close_${key}`) as string;

@@ -47,6 +47,7 @@ function parseTime(s: string): number {
 
 /**
  * Verifica se il panificio è aperto in un dato giorno (ignorando l'orario).
+ * Supporta sia giorni singoli ("Lunedì") che range ("Martedì – Venerdì").
  * Usata per bloccare prenotazioni nei giorni di chiusura.
  */
 export function isOpenOnDate(
@@ -61,6 +62,7 @@ export function isOpenOnDate(
     if (from == null || to == null || dow < from || dow > to) continue;
     return row.hours.toLowerCase() !== "chiuso";
   }
+  // Nessuna regola trovata → consideriamo chiuso (sicuro per default)
   return false;
 }
 

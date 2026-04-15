@@ -14,10 +14,13 @@ import { it } from "date-fns/locale";
 export const metadata = { title: "Impostazioni — Gestione" };
 
 const OPENING_ROWS = [
-  { label: "Lunedì",           key: "lunedì" },
-  { label: "Martedì – Venerdì", key: "martedì_–_venerdì" },
-  { label: "Sabato",           key: "sabato" },
-  { label: "Domenica",         key: "domenica" },
+  { label: "Lunedì",    key: "lunedì" },
+  { label: "Martedì",   key: "martedì" },
+  { label: "Mercoledì", key: "mercoledì" },
+  { label: "Giovedì",   key: "giovedì" },
+  { label: "Venerdì",   key: "venerdì" },
+  { label: "Sabato",    key: "sabato" },
+  { label: "Domenica",  key: "domenica" },
 ];
 
 function parseHours(hours: string): { closed: boolean; open: string; close: string } {
