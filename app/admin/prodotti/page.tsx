@@ -1,5 +1,6 @@
 import { requireAdmin } from "@/lib/session";
 import { prisma } from "@/lib/prisma";
+import { ProductImageUpload } from "@/components/admin/product-image-upload";
 
 export const metadata = { title: "Prodotti — Gestione" };
 
@@ -7,7 +8,10 @@ export default async function AdminProductsPage() {
   await requireAdmin();
 
   const products = await prisma.product.findMany({
-    include: { category: true },
+    include: {
+      category: true,
+      images: { orderBy: { sortOrder: "asc" }, take: 1 },
+    },
     orderBy: [{ category: { sortOrder: "asc" } }, { sortOrder: "asc" }],
   });
 
@@ -16,19 +20,29 @@ export default async function AdminProductsPage() {
       <p className="section-label mb-1">Gestione</p>
       <h1 className="text-3xl font-extrabold mb-2">Prodotti</h1>
       <p className="text-sm mb-8" style={{ color: "var(--muted)" }}>
-        I prodotti sono configurati tramite seed. Contatta l'amministratore per aggiungere o modificare prodotti.
+        Carica o sostituisci la foto di ogni prodotto. Le modifiche sono subito visibili sul sito.
       </p>
 
       <div className="card divide-y" style={{ borderColor: "var(--border)" }}>
         {products.map((p) => (
-          <div key={p.id} className="flex items-center justify-between px-6 py-4">
-            <div>
+          <div key={p.id} className="flex items-center gap-6 px-6 py-4 flex-wrap">
+            {/* Upload immagine */}
+            <ProductImageUpload
+              productId={p.id}
+              currentImageUrl={p.images[0]?.url ?? null}
+              productName={p.name}
+            />
+
+            {/* Info prodotto */}
+            <div className="flex-1 min-w-0">
               <p className="font-semibold">{p.name}</p>
               <p className="text-sm mt-0.5" style={{ color: "var(--muted)" }}>
                 {p.category.name}
                 {p.shortDescription ? ` — ${p.shortDescription}` : ""}
               </p>
             </div>
+
+            {/* Badge stato */}
             <div className="flex items-center gap-2 shrink-0">
               {p.isSpecial && <span className="tag-accent">Speciale</span>}
               {p.isSeasonal && <span className="tag-amber">Stagionale</span>}

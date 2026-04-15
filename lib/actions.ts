@@ -10,6 +10,7 @@ import { auth } from "@/lib/auth";
 import { generateReservationCode } from "@/lib/utils";
 import { ReservationStatus } from "@prisma/client";
 import { sendWelcomeEmail } from "@/lib/email";
+import { uploadProductImage, deleteProductImage } from "@/lib/supabase-storage";
 
 // ─── Registrazione ────────────────────────────────────────────────────────────
 
@@ -248,4 +249,33 @@ export async function createReservationAction(data: {
 
   revalidatePath("/area-clienti/prenotazioni");
   return { code: reservation.code };
+}
+
+// ─── Admin: Immagini prodotto ─────────────────────────────────────────────────
+
+export async function upsertProductImageAction(formData: FormData) {
+  const session = await auth();
+  if (session?.user?.role !== "ADMIN") return { error: "Non autorizzato" };
+
+  const productId = formData.get("productId") as string;
+  const file = formData.get("file") as File;
+  if (!productId || !file || file.size === 0) return { error: "Dati mancanti" };
+
+  // Elimina immagine precedente (prima posizione) se esiste
+  const existing = await prisma.productImage.findFirst({
+    where: { productId, sortOrder: 0 },
+  });
+  if (existing) {
+    await deleteProductImage(existing.url).catch(() => null);
+    await prisma.productImage.delete({ where: { id: existing.id } });
+  }
+
+  const publicUrl = await uploadProductImage(productId, file);
+
+  await prisma.productImage.create({
+    data: { productId, url: publicUrl, sortOrder: 0 },
+  });
+
+  revalidatePath("/admin/prodotti");
+  revalidatePath("/prodotti");
 }
