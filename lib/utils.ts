@@ -45,6 +45,25 @@ function parseTime(s: string): number {
   return h * 60 + (m ?? 0);
 }
 
+/**
+ * Verifica se il panificio è aperto in un dato giorno (ignorando l'orario).
+ * Usata per bloccare prenotazioni nei giorni di chiusura.
+ */
+export function isOpenOnDate(
+  openingHours: { day: string; hours: string }[],
+  date: Date
+): boolean {
+  const dow = date.getDay() === 0 ? 7 : date.getDay();
+  for (const row of openingHours) {
+    const parts = row.day.split(/\s*[–-]\s*/);
+    const from = IT_DAYS[parts[0].toLowerCase().trim()];
+    const to   = parts[1] ? IT_DAYS[parts[1].toLowerCase().trim()] : from;
+    if (from == null || to == null || dow < from || dow > to) continue;
+    return row.hours.toLowerCase() !== "chiuso";
+  }
+  return false;
+}
+
 /** Returns { open, opensAt, closesAt } given the openingHours JSON from BusinessSettings. */
 export function getOpenStatus(
   openingHours: { day: string; hours: string }[],

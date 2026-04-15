@@ -8,7 +8,7 @@ import slugify from "slugify";
 import { randomBytes } from "crypto";
 import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth";
-import { generateReservationCode } from "@/lib/utils";
+import { generateReservationCode, isOpenOnDate } from "@/lib/utils";
 import { ReservationStatus } from "@prisma/client";
 import { sendVerificationEmail } from "@/lib/email";
 import { uploadProductImage, deleteProductImage } from "@/lib/supabase-storage";
@@ -250,6 +250,25 @@ export async function createReservationAction(data: {
 
   const { pickupDate, pickupSlotId, notes, items } = parsed.data;
 
+  // Verifica che il giorno scelto non sia una chiusura straordinaria
+  const dateObj = new Date(pickupDate);
+  const closureOnDate = await prisma.closureDate.findUnique({
+    where: { date: new Date(dateObj.getFullYear(), dateObj.getMonth(), dateObj.getDate()) },
+  });
+  if (closureOnDate) {
+    const reason = closureOnDate.reason ? ` (${closureOnDate.reason})` : "";
+    return { error: `Il panificio è chiuso in quella data${reason}. Scegli un altro giorno.` };
+  }
+
+  // Verifica che il giorno non sia tra i giorni di chiusura settimanale
+  const settings = await prisma.businessSettings.findFirst({ select: { openingHours: true } });
+  if (settings?.openingHours) {
+    const oh = settings.openingHours as { day: string; hours: string }[];
+    if (!isOpenOnDate(oh, dateObj)) {
+      return { error: "Il panificio è chiuso in quel giorno. Scegli una data diversa." };
+    }
+  }
+
   const productIds = items.map((i) => i.productId);
   const products = await prisma.product.findMany({
     where: { id: { in: productIds }, isVisible: true },
@@ -342,4 +361,101 @@ export async function markNotificationsReadAction() {
   });
 
   revalidatePath("/notifiche");
+}
+
+// ─── Admin: Fasce orarie ──────────────────────────────────────────────────────
+
+export async function createPickupSlotAction(formData: FormData) {
+  const session = await auth();
+  if (session?.user?.role !== "ADMIN") return;
+
+  const label = (formData.get("label") as string)?.trim();
+  const startTime = (formData.get("startTime") as string)?.trim();
+  const endTime = (formData.get("endTime") as string)?.trim();
+  const maxOrders = parseInt(formData.get("maxOrders") as string) || 20;
+
+  if (!label || !startTime || !endTime) return;
+
+  await prisma.pickupSlot.create({ data: { label, startTime, endTime, maxOrders } });
+  revalidatePath("/admin/impostazioni");
+}
+
+export async function togglePickupSlotAction(formData: FormData) {
+  const session = await auth();
+  if (session?.user?.role !== "ADMIN") return;
+
+  const id = formData.get("id") as string;
+  const slot = await prisma.pickupSlot.findUnique({ where: { id }, select: { isActive: true } });
+  if (!slot) return;
+
+  await prisma.pickupSlot.update({ where: { id }, data: { isActive: !slot.isActive } });
+  revalidatePath("/admin/impostazioni");
+}
+
+export async function deletePickupSlotAction(formData: FormData) {
+  const session = await auth();
+  if (session?.user?.role !== "ADMIN") return;
+
+  const id = formData.get("id") as string;
+  await prisma.pickupSlot.delete({ where: { id } });
+  revalidatePath("/admin/impostazioni");
+}
+
+// ─── Admin: Orari di apertura ─────────────────────────────────────────────────
+
+export async function saveOpeningHoursAction(formData: FormData) {
+  const session = await auth();
+  if (session?.user?.role !== "ADMIN") return;
+
+  const days = ["Lunedì", "Martedì – Venerdì", "Sabato", "Domenica"];
+  const openingHours = days.map((day) => {
+    const key = day.replace(/\s*[–-]\s*/g, "_").toLowerCase();
+    const closed = formData.get(`closed_${key}`) === "on";
+    const open = formData.get(`open_${key}`) as string;
+    const close = formData.get(`close_${key}`) as string;
+    return {
+      day,
+      hours: closed ? "Chiuso" : `${open} – ${close}`,
+    };
+  });
+
+  const existing = await prisma.businessSettings.findFirst();
+  if (existing) {
+    await prisma.businessSettings.update({ where: { id: existing.id }, data: { openingHours } });
+  } else {
+    await prisma.businessSettings.create({ data: { openingHours } });
+  }
+
+  revalidatePath("/admin/impostazioni");
+  revalidatePath("/contatti");
+  revalidatePath("/");
+}
+
+// ─── Admin: Chiusure straordinarie ───────────────────────────────────────────
+
+export async function addClosureDateAction(formData: FormData) {
+  const session = await auth();
+  if (session?.user?.role !== "ADMIN") return;
+
+  const dateStr = formData.get("date") as string;
+  const reason = (formData.get("reason") as string)?.trim() || null;
+  if (!dateStr) return;
+
+  const date = new Date(dateStr);
+  await prisma.closureDate.upsert({
+    where: { date },
+    update: { reason },
+    create: { date, reason },
+  });
+
+  revalidatePath("/admin/impostazioni");
+}
+
+export async function removeClosureDateAction(formData: FormData) {
+  const session = await auth();
+  if (session?.user?.role !== "ADMIN") return;
+
+  const id = formData.get("id") as string;
+  await prisma.closureDate.delete({ where: { id } });
+  revalidatePath("/admin/impostazioni");
 }

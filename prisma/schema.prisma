@@ -197,6 +197,15 @@ model BusinessSettings {
   updatedAt          DateTime @updatedAt
 }
 
+// ─── Chiusure straordinarie ───────────────────────────────────────────────────
+
+model ClosureDate {
+  id        String   @id @default(cuid())
+  date      DateTime @db.Date @unique
+  reason    String?
+  createdAt DateTime @default(now())
+}
+
 // ─── Notifiche ────────────────────────────────────────────────────────────────
 
 model Notification {
