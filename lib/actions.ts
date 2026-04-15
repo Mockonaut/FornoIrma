@@ -58,8 +58,8 @@ export async function registerAction(
     data: { name, email, phone, password: await bcrypt.hash(password, 12) },
   });
 
-  // Email di benvenuto — fire and forget, non blocca il redirect
-  sendWelcomeEmail(email, firstName).catch(() => {});
+  // Email di benvenuto — awaited prima del redirect (serverless termina subito dopo)
+  await sendWelcomeEmail(email, firstName).catch(() => {});
 
   redirect("/login?registered=1");
 }
