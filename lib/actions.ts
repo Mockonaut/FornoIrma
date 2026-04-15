@@ -59,7 +59,8 @@ export async function registerAction(
   });
 
   // Email di benvenuto — awaited prima del redirect (serverless termina subito dopo)
-  await sendWelcomeEmail(email, firstName).catch(() => {});
+  const emailResult = await sendWelcomeEmail(email, firstName).catch((e) => ({ error: e }));
+  console.log("[email] welcome result:", JSON.stringify(emailResult));
 
   redirect("/login?registered=1");
 }
