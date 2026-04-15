@@ -89,9 +89,13 @@ export async function sendWelcomeEmail(to: string, firstName: string) {
     ${muted("Hai ricevuto questa email perché ti sei registrato su forno-irma.vercel.app. Se non sei stato tu, ignora questo messaggio.")}
   `;
 
+  // In sviluppo senza dominio verificato, Resend accetta solo l'email dell'account owner.
+  // Rimuovere DEV_EMAIL_OVERRIDE quando il dominio è verificato su resend.com/domains.
+  const recipient = process.env.DEV_EMAIL_OVERRIDE ?? to;
+
   return resend.emails.send({
     from: FROM,
-    to,
+    to: recipient,
     subject: "Benvenuto al Forno Irma ★",
     html: baseTemplate(body),
   });
