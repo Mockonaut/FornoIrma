@@ -20,9 +20,12 @@ export default async function AdminUsersPage() {
     <div>
       <p className="section-label mb-1">Gestione</p>
       <h1 className="text-3xl font-extrabold mb-2">Utenti</h1>
-      <p className="text-sm mb-8" style={{ color: "var(--muted)" }}>
+      <p className="text-sm mb-4" style={{ color: "var(--muted)" }}>
         {users.length} account registrati. Puoi promuovere un utente ad admin o rimuovergli i permessi.
       </p>
+      <div className="rounded-xl px-4 py-3 mb-8 text-sm" style={{ background: "var(--sand)", color: "var(--muted)", borderLeft: "3px solid var(--accent)" }}>
+        <strong style={{ color: "var(--foreground)" }}>Nota:</strong> dopo la promozione, l&apos;utente deve uscire e rientrare per accedere all&apos;area di gestione. Il ruolo diventa attivo alla sessione successiva.
+      </div>
 
       <div className="card divide-y" style={{ borderColor: "var(--border)" }}>
         {users.map((u) => {
