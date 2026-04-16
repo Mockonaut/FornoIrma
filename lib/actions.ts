@@ -224,6 +224,23 @@ export async function updateReservationStatusAction(formData: FormData) {
     ).catch(() => null);
   }
 
+  // Quando la prenotazione è terminale, marca come lette le notifiche NEW_RESERVATION
+  // degli admin che la riguardano (evita notifiche fantasma)
+  if (status === "COMPLETED" || status === "CANCELLED") {
+    const updated = await prisma.notification.updateMany({
+      where: {
+        type: NotificationType.NEW_RESERVATION,
+        isRead: false,
+        body: { contains: `#${reservation.code}` },
+      },
+      data: { isRead: true },
+    });
+    if (updated.count > 0) {
+      const admins = await prisma.user.findMany({ where: { role: "ADMIN" }, select: { id: true } });
+      admins.forEach((a) => revalidateTag(`notifications-${a.id}`));
+    }
+  }
+
   revalidatePath("/admin/prenotazioni");
 }
 
