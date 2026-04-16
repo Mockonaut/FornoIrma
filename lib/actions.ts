@@ -381,6 +381,20 @@ export async function markNotificationsReadAction() {
   revalidatePath("/notifiche");
 }
 
+export async function deleteNotificationAction(formData: FormData) {
+  const session = await auth();
+  if (!session?.user?.id) return;
+
+  const id = formData.get("id") as string;
+  // Verifica che la notifica appartenga all'utente
+  await prisma.notification.deleteMany({
+    where: { id, userId: session.user.id },
+  });
+
+  revalidateTag(`notifications-${session.user.id}`);
+  revalidatePath("/notifiche");
+}
+
 // ─── Admin: Fasce orarie ──────────────────────────────────────────────────────
 
 export async function createPickupSlotAction(formData: FormData) {
