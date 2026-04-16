@@ -2,6 +2,7 @@ import Link from "next/link";
 import { requireAuth } from "@/lib/session";
 import { prisma } from "@/lib/prisma";
 import { DeleteAccountButton } from "@/components/forms/delete-account-button";
+import { ProfileForm } from "@/components/forms/profile-form";
 
 export const metadata = { title: "Il mio profilo" };
 
@@ -23,6 +24,8 @@ export default async function ProfilePage() {
           <p><strong className="text-[var(--foreground)]">Telefono:</strong> {user?.phone || "Non inserito"}</p>
           <p><strong className="text-[var(--foreground)]">Prenotazioni totali:</strong> {user?.reservations.length ?? 0}</p>
         </div>
+
+        <ProfileForm initialName={user?.name ?? ""} initialPhone={user?.phone ?? null} />
 
         <div className="mt-8 pt-6 border-t" style={{ borderColor: "var(--border)" }}>
           <p className="text-xs mb-3" style={{ color: "var(--muted)" }}>

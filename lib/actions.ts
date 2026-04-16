@@ -161,6 +161,38 @@ export async function removeDailyScheduleAction(formData: FormData) {
   revalidatePath("/admin/pane-del-giorno");
 }
 
+// ─── Utente: modifica profilo ─────────────────────────────────────────────────
+
+export async function updateProfileAction(
+  _prev: { error?: string; success?: boolean } | null,
+  formData: FormData
+): Promise<{ error?: string; success?: boolean }> {
+  const session = await auth();
+  if (!session?.user?.id) return { error: "Non autenticato." };
+
+  const firstName = (formData.get("firstName") as string)?.trim();
+  const lastName  = (formData.get("lastName") as string)?.trim();
+  const phone     = (formData.get("phone") as string)?.trim() || null;
+
+  if (!firstName || !lastName) return { error: "Nome e cognome sono obbligatori." };
+
+  // Verifica unicità telefono (se inserito e diverso dall'attuale)
+  if (phone) {
+    const existing = await prisma.user.findFirst({
+      where: { phone, NOT: { id: session.user.id } },
+    });
+    if (existing) return { error: "Questo numero è già associato a un altro account." };
+  }
+
+  await prisma.user.update({
+    where: { id: session.user.id },
+    data: { name: `${firstName} ${lastName}`, phone },
+  });
+
+  revalidatePath("/profilo");
+  return { success: true };
+}
+
 // ─── Utente: cancellazione account ───────────────────────────────────────────
 
 export async function deleteAccountAction(): Promise<{ error?: string }> {
