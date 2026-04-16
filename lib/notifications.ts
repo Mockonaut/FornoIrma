@@ -1,3 +1,4 @@
+import { revalidateTag } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { NotificationType } from "@prisma/client";
 
@@ -39,6 +40,8 @@ export async function notifyAdminsNewReservation(reservationCode: string, linkUr
       linkUrl,
     })),
   });
+
+  admins.forEach((a) => revalidateTag(`notifications-${a.id}`));
 }
 
 /** Notifica l'utente del cambio stato della sua prenotazione */
@@ -52,4 +55,6 @@ export async function notifyUserReservationStatus(
   await prisma.notification.create({
     data: { userId, type, title: copy.title, body: copy.body, linkUrl },
   });
+
+  revalidateTag(`notifications-${userId}`);
 }

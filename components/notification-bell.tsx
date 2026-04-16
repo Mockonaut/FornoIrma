@@ -1,14 +1,18 @@
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
+import { unstable_cache } from "next/cache";
 
 interface Props {
   userId: string;
 }
 
 export async function NotificationBell({ userId }: Props) {
-  const count = await prisma.notification.count({
-    where: { userId, isRead: false },
-  });
+  const getCount = unstable_cache(
+    () => prisma.notification.count({ where: { userId, isRead: false } }),
+    [`notif-count-${userId}`],
+    { revalidate: 30, tags: [`notifications-${userId}`] }
+  );
+  const count = await getCount();
 
   return (
     <Link
