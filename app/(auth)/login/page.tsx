@@ -61,10 +61,15 @@ export default async function LoginPage({
         <div className="mt-6">
           <LoginForm />
         </div>
-        <p className="mt-4 text-sm text-[var(--muted)]">
-          Non hai un account?{" "}
-          <Link href="/register" className="font-semibold" style={{ color: "var(--accent)" }}>Registrati</Link>
-        </p>
+        <div className="mt-4 flex items-center justify-between text-sm" style={{ color: "var(--muted)" }}>
+          <span>
+            Non hai un account?{" "}
+            <Link href="/register" className="font-semibold" style={{ color: "var(--accent)" }}>Registrati</Link>
+          </span>
+          <Link href="/forgot-password" className="font-semibold" style={{ color: "var(--accent)" }}>
+            Password dimenticata?
+          </Link>
+        </div>
       </div>
     </div>
   );

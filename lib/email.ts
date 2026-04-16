@@ -123,3 +123,26 @@ export async function sendWelcomeEmail(to: string, firstName: string) {
     html: baseTemplate(body),
   });
 }
+
+// ─── Email: reset password ────────────────────────────────────────────────────
+
+export async function sendPasswordResetEmail(to: string, token: string) {
+  const resetUrl = `${SITE}/reset-password?token=${token}`;
+
+  const body = `
+    ${h1("Reimposta la tua password")}
+    ${p("Hai richiesto di reimpostare la password del tuo account Forno Irma. Clicca il pulsante qui sotto per sceglierne una nuova.")}
+    ${btn("Reimposta password", resetUrl)}
+    ${p("Il link è valido per <strong>1 ora</strong>. Se non hai fatto questa richiesta, ignora questa email — la tua password non cambierà.")}
+    ${muted("Hai ricevuto questa email perché è stata richiesta una reimpostazione password per il tuo account su Forno Irma.")}
+  `;
+
+  const recipient = process.env.DEV_EMAIL_OVERRIDE ?? to;
+
+  return resend.emails.send({
+    from: FROM,
+    to: recipient,
+    subject: "Reimposta la tua password — Forno Irma",
+    html: baseTemplate(body),
+  });
+}

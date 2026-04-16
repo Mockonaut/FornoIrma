@@ -10,7 +10,7 @@ import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth";
 import { generateReservationCode, isOpenOnDate } from "@/lib/utils";
 import { ReservationStatus } from "@prisma/client";
-import { sendVerificationEmail } from "@/lib/email";
+import { sendVerificationEmail, sendPasswordResetEmail } from "@/lib/email";
 import { uploadProductImage, deleteProductImage } from "@/lib/supabase-storage";
 import { notifyAdminsNewReservation, notifyUserReservationStatus } from "@/lib/notifications";
 import { NotificationType } from "@prisma/client";
@@ -522,4 +522,62 @@ export async function removeClosureDateAction(formData: FormData) {
   const id = formData.get("id") as string;
   await prisma.closureDate.delete({ where: { id } });
   revalidatePath("/admin/impostazioni");
+}
+
+// ─── Recupero password ────────────────────────────────────────────────────────
+
+export async function requestPasswordResetAction(
+  _prev: { error?: string; success?: boolean } | null,
+  formData: FormData
+): Promise<{ error?: string; success?: boolean }> {
+  const email = (formData.get("email") as string)?.trim().toLowerCase();
+  if (!email) return { error: "Inserisci un indirizzo email." };
+
+  const user = await prisma.user.findUnique({ where: { email }, select: { id: true, email: true } });
+
+  // Risposta sempre positiva per non rivelare se l'email esiste
+  if (!user) return { success: true };
+
+  // Elimina token precedenti per questo utente
+  await prisma.verificationToken.deleteMany({ where: { identifier: `reset:${email}` } });
+
+  const token = randomBytes(32).toString("hex");
+  await prisma.verificationToken.create({
+    data: {
+      identifier: `reset:${email}`,
+      token,
+      expires: new Date(Date.now() + 60 * 60 * 1000), // 1 ora
+    },
+  });
+
+  await sendPasswordResetEmail(email, token).catch(() => {});
+  return { success: true };
+}
+
+export async function resetPasswordAction(
+  _prev: { error?: string; success?: boolean } | null,
+  formData: FormData
+): Promise<{ error?: string; success?: boolean }> {
+  const token = (formData.get("token") as string)?.trim();
+  const password = formData.get("password") as string;
+  const confirmPassword = formData.get("confirmPassword") as string;
+
+  if (!token) return { error: "Token mancante." };
+  if (!password || password.length < 8) return { error: "La password deve essere di almeno 8 caratteri." };
+  if (password !== confirmPassword) return { error: "Le password non coincidono." };
+
+  const record = await prisma.verificationToken.findUnique({ where: { token } });
+  if (!record || !record.identifier.startsWith("reset:")) return { error: "Link non valido o già usato." };
+  if (record.expires < new Date()) {
+    await prisma.verificationToken.delete({ where: { token } });
+    return { error: "Il link è scaduto. Richiedine uno nuovo." };
+  }
+
+  const email = record.identifier.replace("reset:", "");
+  const hashed = await bcrypt.hash(password, 12);
+
+  await prisma.user.update({ where: { email }, data: { password: hashed } });
+  await prisma.verificationToken.delete({ where: { token } });
+
+  return { success: true };
 }
