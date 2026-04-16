@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState, useState } from "react";
+import { useActionState, useState, useEffect } from "react";
 import { updateProfileAction } from "@/lib/actions";
 
 interface Props {
@@ -16,6 +16,10 @@ export function ProfileForm({ initialName, initialPhone }: Props) {
   const defaultFirst = nameParts[0] ?? "";
   const defaultLast  = nameParts.slice(1).join(" ");
 
+  useEffect(() => {
+    if (state?.success) setEditing(false);
+  }, [state?.success]);
+
   if (!editing) {
     return (
       <button
@@ -29,13 +33,7 @@ export function ProfileForm({ initialName, initialPhone }: Props) {
   }
 
   return (
-    <form
-      action={async (fd) => {
-        await action(fd);
-        setEditing(false);
-      }}
-      className="mt-5 space-y-3"
-    >
+    <form action={action} className="mt-5 space-y-3">
       <div className="grid grid-cols-2 gap-3">
         <div className="flex flex-col gap-1">
           <label className="label">Nome</label>
