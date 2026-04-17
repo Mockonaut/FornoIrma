@@ -352,6 +352,59 @@ export async function createReservationAction(data: {
   return { code: reservation.code };
 }
 
+// ─── Admin: Prodotti ─────────────────────────────────────────────────────────
+
+export async function createProductAction(formData: FormData) {
+  const session = await auth();
+  if (session?.user?.role !== "ADMIN") return;
+
+  const name = (formData.get("name") as string).trim();
+  const shortDescription = (formData.get("shortDescription") as string | null)?.trim() || undefined;
+  const categoryId = (formData.get("categoryId") as string).trim();
+  const isSeasonal = formData.get("isSeasonal") === "on";
+  const isSpecial = formData.get("isSpecial") === "on";
+
+  if (!name || !categoryId) return;
+
+  const slug = slugify(name, { lower: true, strict: true });
+  const max = await prisma.product.aggregate({ _max: { sortOrder: true } });
+
+  await prisma.product.create({
+    data: {
+      name,
+      slug,
+      shortDescription,
+      categoryId,
+      isSeasonal,
+      isSpecial,
+      isVisible: true,
+      sortOrder: (max._max.sortOrder ?? 0) + 1,
+    },
+  });
+
+  revalidatePath("/admin/prodotti");
+  revalidatePath("/prodotti");
+}
+
+export async function deleteProductAction(formData: FormData) {
+  const session = await auth();
+  if (session?.user?.role !== "ADMIN") return;
+
+  const productId = formData.get("productId") as string;
+  if (!productId) return;
+
+  // Elimina immagini associate dallo storage
+  const images = await prisma.productImage.findMany({ where: { productId } });
+  for (const img of images) {
+    await deleteProductImage(img.url).catch(() => null);
+  }
+
+  await prisma.product.delete({ where: { id: productId } });
+
+  revalidatePath("/admin/prodotti");
+  revalidatePath("/prodotti");
+}
+
 // ─── Admin: Immagini prodotto ─────────────────────────────────────────────────
 
 export async function upsertProductImageAction(formData: FormData) {
