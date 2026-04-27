@@ -115,7 +115,10 @@ export async function sendWelcomeEmail(to: string, firstName: string) {
     ${muted("Hai ricevuto questa email perché il tuo account su Forno Irma è stato attivato.")}
   `;
 
-  const recipient = process.env.DEV_EMAIL_OVERRIDE ?? to;
+  const recipient =
+    process.env.NODE_ENV === "development" && process.env.DEV_EMAIL_OVERRIDE
+      ? process.env.DEV_EMAIL_OVERRIDE
+      : to;
 
   return resend.emails.send({
     from: FROM,
