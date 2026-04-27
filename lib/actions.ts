@@ -1,4 +1,4 @@
-"use server";
+﻿"use server";
 
 import { revalidatePath, revalidateTag } from "next/cache";
 import { redirect } from "next/navigation";
@@ -19,6 +19,7 @@ import { ReservationStatus } from "@prisma/client";
 import { sendVerificationEmail, sendPasswordResetEmail } from "@/lib/email";
 import { uploadProductImage, deleteProductImage } from "@/lib/supabase-storage";
 import { notifyAdminsNewReservation, notifyUserReservationStatus } from "@/lib/notifications";
+import { assertAdmin } from "@/lib/session";
 import { NotificationType } from "@prisma/client";
 
 // ─── Registrazione ────────────────────────────────────────────────────────────

@@ -62,7 +62,7 @@ export const getDailySpecial = unstable_cache(
 
     const specific = await prisma.dailySchedule.findUnique({
       where: { date: todayDate },
-      include: { breadType: true },
+      select: { breadType: { select: { name: true, description: true, isActive: true } } },
     });
     if (specific?.breadType.isActive) {
       return { name: specific.breadType.name, description: specific.breadType.description, source: "scheduled" };
@@ -70,7 +70,7 @@ export const getDailySpecial = unstable_cache(
 
     const recurring = await prisma.dailySchedule.findUnique({
       where: { dayOfWeek: dow },
-      include: { breadType: true },
+      select: { breadType: { select: { name: true, description: true, isActive: true } } },
     });
     if (recurring?.breadType.isActive) {
       return { name: recurring.breadType.name, description: recurring.breadType.description, source: "recurring" };
