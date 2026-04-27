@@ -4,9 +4,16 @@ import { useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { createReservationAction } from "@/lib/actions";
 import { isOpenOnDate } from "@/lib/utils";
-import type { Product, Category, PickupSlot } from "@prisma/client";
+import type { Category, PickupSlot } from "@prisma/client";
 
-type ProductWithCategory = Product & { category: Category };
+type ProductWithCategory = {
+  id: string;
+  name: string;
+  shortDescription: string | null;
+  availableDays: number[];
+  maxQtyPerOrder: number | null;
+  category: Category;
+};
 
 interface Props {
   products: ProductWithCategory[];
@@ -182,7 +189,8 @@ export function NewReservationForm({ products, pickupSlots, closureDates, openin
                           <button
                             type="button"
                             onClick={() => setQuantity(product.id, qty - 1)}
-                            className="flex h-8 w-8 items-center justify-center rounded-full border text-lg font-bold transition-colors hover:bg-stone-100"
+                            disabled={qty === 0}
+                            className="flex h-8 w-8 items-center justify-center rounded-full border text-lg font-bold transition-colors hover:bg-stone-100 disabled:opacity-30"
                             style={{ borderColor: "var(--border)" }}
                           >
                             −
@@ -191,11 +199,17 @@ export function NewReservationForm({ products, pickupSlots, closureDates, openin
                           <button
                             type="button"
                             onClick={() => setQuantity(product.id, qty + 1)}
-                            className="flex h-8 w-8 items-center justify-center rounded-full border text-lg font-bold transition-colors hover:bg-stone-100"
+                            disabled={product.maxQtyPerOrder !== null && qty >= product.maxQtyPerOrder}
+                            className="flex h-8 w-8 items-center justify-center rounded-full border text-lg font-bold transition-colors hover:bg-stone-100 disabled:opacity-30"
                             style={{ borderColor: "var(--border)" }}
                           >
                             +
                           </button>
+                          {product.maxQtyPerOrder !== null && (
+                            <span className="text-xs" style={{ color: "var(--muted)" }}>
+                              max {product.maxQtyPerOrder}
+                            </span>
+                          )}
                         </div>
                       </div>
                     );

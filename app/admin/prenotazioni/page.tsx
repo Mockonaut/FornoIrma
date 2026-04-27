@@ -81,14 +81,23 @@ export default async function AdminReservationsPage({
           <p className="section-label mb-1">Gestione</p>
           <h1 className="text-3xl font-extrabold">Prenotazioni</h1>
         </div>
-        {totalPending > 0 && (
-          <div
-            className="rounded-2xl px-4 py-2 text-sm font-semibold"
-            style={{ background: "#fef3c7", color: "#92400e" }}
+        <div className="flex items-center gap-3 flex-wrap">
+          {totalPending > 0 && (
+            <div
+              className="rounded-2xl px-4 py-2 text-sm font-semibold"
+              style={{ background: "#fef3c7", color: "#92400e" }}
+            >
+              ⚠ {totalPending} in attesa di conferma
+            </div>
+          )}
+          <a
+            href={`/api/admin/export-reservations?date=${format(new Date(), "yyyy-MM-dd")}`}
+            className="btn-ghost text-sm py-2 px-4"
+            download
           >
-            ⚠ {totalPending} in attesa di conferma
-          </div>
-        )}
+            ↓ Esporta oggi (.csv)
+          </a>
+        </div>
       </div>
 
       {/* Tab bar */}

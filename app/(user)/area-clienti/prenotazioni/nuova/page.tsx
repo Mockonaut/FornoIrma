@@ -8,7 +8,14 @@ export default async function NewReservationPage() {
   const [products, pickupSlots, constraints] = await Promise.all([
     prisma.product.findMany({
       where: { isVisible: true },
-      include: { category: true },
+      select: {
+        id: true,
+        name: true,
+        shortDescription: true,
+        availableDays: true,
+        maxQtyPerOrder: true,
+        category: true,
+      },
       orderBy: [{ category: { sortOrder: "asc" } }, { name: "asc" }],
     }),
     prisma.pickupSlot.findMany({ where: { isActive: true }, orderBy: { startTime: "asc" } }),

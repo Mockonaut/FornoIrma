@@ -4,7 +4,7 @@ import { ProductImageUpload } from "@/components/admin/product-image-upload";
 import {
   toggleProductVisibilityAction,
   createProductAction,
-  updateProductAvailableDaysAction,
+  updateProductSettingsAction,
 } from "@/lib/actions";
 import { DeleteProductButton } from "@/components/admin/delete-product-button";
 
@@ -118,11 +118,13 @@ export default async function AdminProductsPage() {
               </div>
             </div>
 
-            {/* Giorni di disponibilità */}
-            <form action={updateProductAvailableDaysAction} className="flex flex-wrap items-center gap-3 pl-0 sm:pl-20">
+            {/* Disponibilità e limiti */}
+            <form action={updateProductSettingsAction} className="flex flex-wrap items-center gap-x-4 gap-y-2 pl-0 sm:pl-20">
               <input type="hidden" name="productId" value={p.id} />
+
+              {/* Giorni */}
               <span className="text-xs font-medium shrink-0" style={{ color: "var(--muted)" }}>
-                Disponibile:
+                Giorni:
               </span>
               {[1, 2, 3, 4, 5, 6, 7].map((dow) => (
                 <label key={dow} className="flex items-center gap-1 text-xs cursor-pointer">
@@ -136,9 +138,24 @@ export default async function AdminProductsPage() {
                   {DOW_LABELS[dow]}
                 </label>
               ))}
-              <span className="text-xs" style={{ color: "var(--muted)" }}>
-                (nessun giorno selezionato = sempre disponibile)
+              <span className="text-xs" style={{ color: "var(--muted)" }}>(vuoto = sempre)</span>
+
+              {/* Separatore visivo */}
+              <span className="text-xs" style={{ color: "var(--border)" }}>|</span>
+
+              {/* Quantità max */}
+              <span className="text-xs font-medium shrink-0" style={{ color: "var(--muted)" }}>
+                Max qtà:
               </span>
+              <input
+                type="number"
+                name="maxQtyPerOrder"
+                min={1}
+                defaultValue={p.maxQtyPerOrder ?? ""}
+                placeholder="illimitata"
+                className="input text-xs py-1 w-24"
+              />
+
               <button type="submit" className="btn-ghost text-xs py-1 px-3 shrink-0">
                 Salva
               </button>

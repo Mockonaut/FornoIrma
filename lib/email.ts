@@ -138,12 +138,69 @@ export async function sendPasswordResetEmail(to: string, token: string) {
     ${muted("Hai ricevuto questa email perché è stata richiesta una reimpostazione password per il tuo account su Forno Irma.")}
   `;
 
-  const recipient = process.env.DEV_EMAIL_OVERRIDE ?? to;
+  const recipient =
+    process.env.NODE_ENV === "development" && process.env.DEV_EMAIL_OVERRIDE
+      ? process.env.DEV_EMAIL_OVERRIDE
+      : to;
 
   return resend.emails.send({
     from: FROM,
     to: recipient,
     subject: "Reimposta la tua password — Forno Irma",
+    html: baseTemplate(body),
+  });
+}
+
+// ─── Email: aggiornamento stato prenotazione ──────────────────────────────────
+
+export async function sendReservationStatusEmail(
+  to: string,
+  code: string,
+  status: "CONFIRMED" | "READY" | "CANCELLED"
+) {
+  const link = `${SITE}/area-clienti/prenotazioni`;
+
+  const templates = {
+    CONFIRMED: {
+      subject: "Prenotazione confermata — Forno Irma",
+      body: `
+        ${h1("La tua prenotazione è confermata ✓")}
+        ${p(`La prenotazione <strong>#${code}</strong> è stata confermata. Ti aspettiamo al momento del ritiro!`)}
+        ${btn("Vedi prenotazione", link)}
+        ${muted("Hai ricevuto questa email perché sei registrato al Forno Irma.")}
+      `,
+    },
+    READY: {
+      subject: "Il tuo ordine è pronto — Forno Irma",
+      body: `
+        ${h1("Il tuo ordine è pronto per il ritiro 🎉")}
+        ${p(`La prenotazione <strong>#${code}</strong> è pronta. Passa in negozio nella fascia oraria che hai scelto!`)}
+        ${btn("Vedi prenotazione", link)}
+        ${muted("Hai ricevuto questa email perché sei registrato al Forno Irma.")}
+      `,
+    },
+    CANCELLED: {
+      subject: "Prenotazione annullata — Forno Irma",
+      body: `
+        ${h1("Prenotazione annullata")}
+        ${p(`La prenotazione <strong>#${code}</strong> è stata annullata. Per qualsiasi domanda contattaci direttamente.`)}
+        ${btn("Fai una nuova prenotazione", `${SITE}/area-clienti/prenotazioni/nuova`)}
+        ${muted("Hai ricevuto questa email perché sei registrato al Forno Irma.")}
+      `,
+    },
+  };
+
+  const { subject, body } = templates[status];
+
+  const recipient =
+    process.env.NODE_ENV === "development" && process.env.DEV_EMAIL_OVERRIDE
+      ? process.env.DEV_EMAIL_OVERRIDE
+      : to;
+
+  return resend.emails.send({
+    from: FROM,
+    to: recipient,
+    subject,
     html: baseTemplate(body),
   });
 }

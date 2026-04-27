@@ -11,3 +11,4 @@ export const ALLOWED_IMAGE_EXTS = ["jpg", "jpeg", "png", "webp"] as const;
 
 // Prenotazioni
 export const DEFAULT_MAX_ORDERS_PER_SLOT = 20;
+export const DEFAULT_MAX_OPEN_RESERVATIONS = 3;

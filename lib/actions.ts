@@ -20,6 +20,7 @@ import { sendVerificationEmail, sendPasswordResetEmail } from "@/lib/email";
 import { uploadProductImage, deleteProductImage } from "@/lib/supabase-storage";
 import { notifyAdminsNewReservation, notifyUserReservationStatus } from "@/lib/notifications";
 import { assertAdmin } from "@/lib/session";
+import { sendReservationStatusEmail } from "@/lib/email";
 import { NotificationType } from "@prisma/client";
 
 // ─── Registrazione ────────────────────────────────────────────────────────────
@@ -83,8 +84,7 @@ export async function registerAction(
 // ─── Admin: Categorie ─────────────────────────────────────────────────────────
 
 export async function createCategoryAction(formData: FormData) {
-  const session = await auth();
-  if (session?.user?.role !== "ADMIN") return;
+  await assertAdmin();
 
   const name = (formData.get("name") as string).trim();
   const description = (formData.get("description") as string | null)?.trim() || undefined;
@@ -105,8 +105,7 @@ export async function createCategoryAction(formData: FormData) {
 // ─── Admin: Pane del giorno — libreria ───────────────────────────────────────
 
 export async function createBreadTypeAction(formData: FormData) {
-  const session = await auth();
-  if (session?.user?.role !== "ADMIN") return;
+  await assertAdmin();
 
   const name = (formData.get("name") as string).trim();
   const description = (formData.get("description") as string | null)?.trim() || undefined;
@@ -117,8 +116,7 @@ export async function createBreadTypeAction(formData: FormData) {
 }
 
 export async function toggleBreadTypeAction(formData: FormData) {
-  const session = await auth();
-  if (session?.user?.role !== "ADMIN") return;
+  await assertAdmin();
 
   const id = formData.get("id") as string;
   const current = await prisma.breadType.findUnique({ where: { id }, select: { isActive: true } });
@@ -131,8 +129,7 @@ export async function toggleBreadTypeAction(formData: FormData) {
 // ─── Admin: Pane del giorno — calendario ─────────────────────────────────────
 
 export async function setDailyScheduleAction(formData: FormData) {
-  const session = await auth();
-  if (session?.user?.role !== "ADMIN") return;
+  await assertAdmin();
 
   const breadTypeId = formData.get("breadTypeId") as string;
   const dateStr = (formData.get("date") as string | null)?.trim();
@@ -161,8 +158,7 @@ export async function setDailyScheduleAction(formData: FormData) {
 }
 
 export async function removeDailyScheduleAction(formData: FormData) {
-  const session = await auth();
-  if (session?.user?.role !== "ADMIN") return;
+  await assertAdmin();
 
   const id = formData.get("id") as string;
   if (!id) return;
@@ -217,8 +213,7 @@ export async function deleteAccountAction(): Promise<{ error?: string }> {
 // ─── Admin: Gestione ruoli utenti ────────────────────────────────────────────
 
 export async function toggleUserRoleAction(formData: FormData) {
-  const session = await auth();
-  if (session?.user?.role !== "ADMIN") return;
+  const session = await assertAdmin();
 
   const userId = formData.get("userId") as string;
   if (!userId || userId === session.user.id) return; // non puoi retrocedere te stesso
@@ -237,8 +232,7 @@ export async function toggleUserRoleAction(formData: FormData) {
 // ─── Admin: Stato prenotazione ────────────────────────────────────────────────
 
 export async function updateReservationStatusAction(formData: FormData) {
-  const session = await auth();
-  if (session?.user?.role !== "ADMIN") return;
+  await assertAdmin();
 
   const reservationId = formData.get("reservationId") as string;
   const status = formData.get("status") as ReservationStatus;
@@ -248,10 +242,10 @@ export async function updateReservationStatusAction(formData: FormData) {
   const reservation = await prisma.reservation.update({
     where: { id: reservationId },
     data: { status },
-    select: { code: true, userId: true },
+    select: { code: true, userId: true, user: { select: { email: true } } },
   });
 
-  // Notifica in-app all'utente per i cambi di stato rilevanti
+  // Notifica in-app + email per i cambi di stato rilevanti
   const notifyMap: Partial<Record<ReservationStatus, NotificationType>> = {
     CONFIRMED: NotificationType.RESERVATION_CONFIRMED,
     READY: NotificationType.RESERVATION_READY,
@@ -259,12 +253,18 @@ export async function updateReservationStatusAction(formData: FormData) {
   };
   const notifType = notifyMap[status];
   if (notifType) {
-    await notifyUserReservationStatus(
-      reservation.userId,
-      reservation.code,
-      notifType as "RESERVATION_CONFIRMED" | "RESERVATION_READY" | "RESERVATION_CANCELLED",
-      "/area-clienti/prenotazioni"
-    ).catch(() => null);
+    const emailStatus = status as "CONFIRMED" | "READY" | "CANCELLED";
+    await Promise.all([
+      notifyUserReservationStatus(
+        reservation.userId,
+        reservation.code,
+        notifType as "RESERVATION_CONFIRMED" | "RESERVATION_READY" | "RESERVATION_CANCELLED",
+        "/area-clienti/prenotazioni"
+      ).catch(() => null),
+      reservation.user.email
+        ? sendReservationStatusEmail(reservation.user.email, reservation.code, emailStatus).catch(() => null)
+        : Promise.resolve(),
+    ]);
   }
 
   // Quando la prenotazione è terminale, marca come lette le notifiche NEW_RESERVATION
@@ -310,6 +310,23 @@ export async function createReservationAction(data: {
 
   const { pickupDate, pickupSlotId, notes, items } = parsed.data;
 
+  // Verifica limite prenotazioni aperte per utente
+  const settings = await prisma.businessSettings.findFirst({
+    select: { openingHours: true, maxOpenReservations: true },
+  });
+  const maxOpen = settings?.maxOpenReservations ?? 3;
+  const openCount = await prisma.reservation.count({
+    where: {
+      userId: session.user.id,
+      status: { in: ["PENDING", "CONFIRMED", "READY"] },
+    },
+  });
+  if (openCount >= maxOpen) {
+    return {
+      error: `Hai già ${openCount} prenotazion${openCount === 1 ? "e" : "i"} in corso. Attendi che vengano evase prima di crearne altre.`,
+    };
+  }
+
   // Verifica che il giorno scelto non sia una chiusura straordinaria
   const dateObj = new Date(pickupDate);
   const closureOnDate = await prisma.closureDate.findUnique({
@@ -321,7 +338,6 @@ export async function createReservationAction(data: {
   }
 
   // Verifica che il giorno non sia tra i giorni di chiusura settimanale
-  const settings = await prisma.businessSettings.findFirst({ select: { openingHours: true } });
   if (settings?.openingHours) {
     const oh = settings.openingHours as { day: string; hours: string }[];
     if (!isOpenOnDate(oh, dateObj)) {
@@ -350,17 +366,22 @@ export async function createReservationAction(data: {
   const productIds = items.map((i) => i.productId);
   const products = await prisma.product.findMany({
     where: { id: { in: productIds }, isVisible: true },
-    select: { id: true, name: true, availableDays: true },
+    select: { id: true, name: true, availableDays: true, maxQtyPerOrder: true },
   });
   const productMap = new Map(products.map((p) => [p.id, p]));
 
-  // Verifica disponibilità prodotti nel giorno scelto
+  // Verifica disponibilità e quantità massima per prodotto
   const dow = dateObj.getDay() === 0 ? 7 : dateObj.getDay();
   for (const item of items) {
     const p = productMap.get(item.productId);
     if (!p) return { error: "Uno o più prodotti non sono disponibili." };
     if (p.availableDays.length > 0 && !p.availableDays.includes(dow)) {
       return { error: `Il prodotto "${p.name}" non è disponibile nella data selezionata.` };
+    }
+    if (p.maxQtyPerOrder !== null && item.quantity > p.maxQtyPerOrder) {
+      return {
+        error: `Per "${p.name}" puoi ordinare al massimo ${p.maxQtyPerOrder} ${p.maxQtyPerOrder === 1 ? "unità" : "unità"} per prenotazione.`,
+      };
     }
   }
 
@@ -395,8 +416,7 @@ export async function createReservationAction(data: {
 // ─── Admin: Prodotti ─────────────────────────────────────────────────────────
 
 export async function createProductAction(formData: FormData) {
-  const session = await auth();
-  if (session?.user?.role !== "ADMIN") return;
+  await assertAdmin();
 
   const name = (formData.get("name") as string).trim();
   const shortDescription = (formData.get("shortDescription") as string | null)?.trim() || undefined;
@@ -429,24 +449,27 @@ export async function createProductAction(formData: FormData) {
   revalidatePath("/prodotti");
 }
 
-export async function updateProductAvailableDaysAction(formData: FormData) {
-  const session = await auth();
-  if (session?.user?.role !== "ADMIN") return;
+export async function updateProductSettingsAction(formData: FormData) {
+  await assertAdmin();
 
   const productId = (formData.get("productId") as string).trim();
-  const raw = formData.getAll("availableDays").map((v) => parseInt(v as string, 10)).filter((n) => n >= 1 && n <= 7);
+  const availableDays = formData
+    .getAll("availableDays")
+    .map((v) => parseInt(v as string, 10))
+    .filter((n) => n >= 1 && n <= 7);
+  const maxQtyRaw = formData.get("maxQtyPerOrder") as string;
+  const maxQtyPerOrder = maxQtyRaw ? parseInt(maxQtyRaw, 10) || null : null;
 
   await prisma.product.update({
     where: { id: productId },
-    data: { availableDays: raw },
+    data: { availableDays, maxQtyPerOrder },
   });
 
   revalidatePath("/admin/prodotti");
 }
 
 export async function deleteProductAction(formData: FormData) {
-  const session = await auth();
-  if (session?.user?.role !== "ADMIN") return;
+  await assertAdmin();
 
   const productId = formData.get("productId") as string;
   if (!productId) return;
@@ -493,8 +516,7 @@ export async function upsertProductImageAction(formData: FormData) {
 }
 
 export async function toggleProductVisibilityAction(formData: FormData) {
-  const session = await auth();
-  if (session?.user?.role !== "ADMIN") return;
+  await assertAdmin();
 
   const productId = formData.get("productId") as string;
   const product = await prisma.product.findUnique({ where: { id: productId }, select: { isVisible: true } });
@@ -577,8 +599,7 @@ export async function deleteNotificationAction(formData: FormData) {
 // ─── Admin: Fasce orarie ──────────────────────────────────────────────────────
 
 export async function createPickupSlotAction(formData: FormData) {
-  const session = await auth();
-  if (session?.user?.role !== "ADMIN") return;
+  await assertAdmin();
 
   const label = (formData.get("label") as string)?.trim();
   const startTime = (formData.get("startTime") as string)?.trim();
@@ -592,8 +613,7 @@ export async function createPickupSlotAction(formData: FormData) {
 }
 
 export async function togglePickupSlotAction(formData: FormData) {
-  const session = await auth();
-  if (session?.user?.role !== "ADMIN") return;
+  await assertAdmin();
 
   const id = formData.get("id") as string;
   const slot = await prisma.pickupSlot.findUnique({ where: { id }, select: { isActive: true } });
@@ -604,8 +624,7 @@ export async function togglePickupSlotAction(formData: FormData) {
 }
 
 export async function deletePickupSlotAction(formData: FormData) {
-  const session = await auth();
-  if (session?.user?.role !== "ADMIN") return;
+  await assertAdmin();
 
   const id = formData.get("id") as string;
   await prisma.pickupSlot.delete({ where: { id } });
@@ -615,8 +634,7 @@ export async function deletePickupSlotAction(formData: FormData) {
 // ─── Admin: Orari di apertura ─────────────────────────────────────────────────
 
 export async function saveOpeningHoursAction(formData: FormData) {
-  const session = await auth();
-  if (session?.user?.role !== "ADMIN") return;
+  await assertAdmin();
 
   const days = ["Lunedì", "Martedì", "Mercoledì", "Giovedì", "Venerdì", "Sabato", "Domenica"];
   const openingHours = days.map((day) => {
@@ -645,8 +663,7 @@ export async function saveOpeningHoursAction(formData: FormData) {
 // ─── Admin: Chiusure straordinarie ───────────────────────────────────────────
 
 export async function addClosureDateAction(formData: FormData) {
-  const session = await auth();
-  if (session?.user?.role !== "ADMIN") return;
+  await assertAdmin();
 
   const dateStr = formData.get("date") as string;
   const reason = (formData.get("reason") as string)?.trim() || null;
@@ -663,8 +680,7 @@ export async function addClosureDateAction(formData: FormData) {
 }
 
 export async function removeClosureDateAction(formData: FormData) {
-  const session = await auth();
-  if (session?.user?.role !== "ADMIN") return;
+  await assertAdmin();
 
   const id = formData.get("id") as string;
   await prisma.closureDate.delete({ where: { id } });

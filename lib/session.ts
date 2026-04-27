@@ -18,9 +18,10 @@ export async function requireAdmin() {
  * Usata nelle server actions admin: lancia un errore esplicito invece di
  * tornare silenziosamente, così il problema è visibile nei log.
  */
-export async function assertAdmin(): Promise<void> {
+export async function assertAdmin() {
   const session = await auth();
   if (session?.user?.role !== "ADMIN") {
     throw new Error("Accesso non autorizzato: ruolo ADMIN richiesto.");
   }
+  return session;
 }

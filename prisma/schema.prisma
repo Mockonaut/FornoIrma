@@ -90,6 +90,7 @@ model Product {
   isVisible        Boolean  @default(true)
   sortOrder        Int      @default(0)
   availableDays    Int[]    // ISO 1=Lun…7=Dom; vuoto = sempre disponibile
+  maxQtyPerOrder   Int?     // null = nessun limite
   createdAt        DateTime @default(now())
   updatedAt        DateTime @updatedAt
 
@@ -195,6 +196,7 @@ model BusinessSettings {
   mapEmbedUrl        String?
   pickupInstructions String?
   openingHours       Json?
+  maxOpenReservations Int     @default(3) // max prenotazioni aperte per utente
   updatedAt          DateTime @updatedAt
 }
 
