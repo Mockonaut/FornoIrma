@@ -87,6 +87,17 @@ export const getDailySpecial = unstable_cache(
   { revalidate: 300 }
 );
 
+export async function getReservationConstraints() {
+  const [closureDates, settings] = await Promise.all([
+    prisma.closureDate.findMany({ select: { date: true } }),
+    prisma.businessSettings.findFirst({ select: { openingHours: true } }),
+  ]);
+  return {
+    closureDates: closureDates.map((c) => c.date.toISOString().split("T")[0]),
+    openingHours: (settings?.openingHours ?? null) as { day: string; hours: string }[] | null,
+  };
+}
+
 export async function getBreadLibrary() {
   return prisma.breadType.findMany({ orderBy: { createdAt: "desc" } });
 }

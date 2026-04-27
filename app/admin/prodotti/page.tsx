@@ -4,10 +4,15 @@ import { ProductImageUpload } from "@/components/admin/product-image-upload";
 import {
   toggleProductVisibilityAction,
   createProductAction,
+  updateProductAvailableDaysAction,
 } from "@/lib/actions";
 import { DeleteProductButton } from "@/components/admin/delete-product-button";
 
 export const metadata = { title: "Prodotti — Gestione" };
+
+const DOW_LABELS: Record<number, string> = {
+  1: "Lun", 2: "Mar", 3: "Mer", 4: "Gio", 5: "Ven", 6: "Sab", 7: "Dom",
+};
 
 export default async function AdminProductsPage() {
   await requireAdmin();
@@ -28,7 +33,7 @@ export default async function AdminProductsPage() {
       <p className="section-label mb-1">Gestione</p>
       <h1 className="text-3xl font-extrabold mb-2">Prodotti</h1>
       <p className="text-sm mb-8" style={{ color: "var(--muted)" }}>
-        Aggiungi nuovi prodotti, carica foto e gestisci visibilità e disponibilità.
+        Aggiungi nuovi prodotti, carica foto e gestisci visibilità e giorni di disponibilità.
       </p>
 
       {/* Form aggiunta prodotto */}
@@ -78,38 +83,66 @@ export default async function AdminProductsPage() {
           </p>
         )}
         {products.map((p) => (
-          <div key={p.id} className="flex items-center gap-6 px-6 py-4 flex-wrap">
-            {/* Upload immagine */}
-            <ProductImageUpload
-              productId={p.id}
-              currentImageUrl={p.images[0]?.url ?? null}
-              productName={p.name}
-            />
+          <div key={p.id} className="px-6 py-4 space-y-3">
+            <div className="flex items-center gap-6 flex-wrap">
+              {/* Upload immagine */}
+              <ProductImageUpload
+                productId={p.id}
+                currentImageUrl={p.images[0]?.url ?? null}
+                productName={p.name}
+              />
 
-            {/* Info prodotto */}
-            <div className="flex-1 min-w-0">
-              <p className="font-semibold">{p.name}</p>
-              <p className="text-sm mt-0.5" style={{ color: "var(--muted)" }}>
-                {p.category.name}
-                {p.shortDescription ? ` — ${p.shortDescription}` : ""}
-              </p>
+              {/* Info prodotto */}
+              <div className="flex-1 min-w-0">
+                <p className="font-semibold">{p.name}</p>
+                <p className="text-sm mt-0.5" style={{ color: "var(--muted)" }}>
+                  {p.category.name}
+                  {p.shortDescription ? ` — ${p.shortDescription}` : ""}
+                </p>
+              </div>
+
+              {/* Badge stato + toggle visibilità + elimina */}
+              <div className="flex items-center gap-2 shrink-0">
+                {p.isSpecial && <span className="tag-accent">Speciale</span>}
+                {p.isSeasonal && <span className="tag-amber">Stagionale</span>}
+                <form action={toggleProductVisibilityAction}>
+                  <input type="hidden" name="productId" value={p.id} />
+                  <button
+                    className="btn-ghost text-xs py-1 px-3"
+                    style={p.isVisible ? { color: "var(--muted)" } : { color: "var(--accent)" }}
+                  >
+                    {p.isVisible ? "Nascondi" : "Mostra"}
+                  </button>
+                </form>
+                <DeleteProductButton productId={p.id} productName={p.name} />
+              </div>
             </div>
 
-            {/* Badge stato + toggle visibilità + elimina */}
-            <div className="flex items-center gap-2 shrink-0">
-              {p.isSpecial && <span className="tag-accent">Speciale</span>}
-              {p.isSeasonal && <span className="tag-amber">Stagionale</span>}
-              <form action={toggleProductVisibilityAction}>
-                <input type="hidden" name="productId" value={p.id} />
-                <button
-                  className="btn-ghost text-xs py-1 px-3"
-                  style={p.isVisible ? { color: "var(--muted)" } : { color: "var(--accent)" }}
-                >
-                  {p.isVisible ? "Nascondi" : "Mostra"}
-                </button>
-              </form>
-              <DeleteProductButton productId={p.id} productName={p.name} />
-            </div>
+            {/* Giorni di disponibilità */}
+            <form action={updateProductAvailableDaysAction} className="flex flex-wrap items-center gap-3 pl-0 sm:pl-20">
+              <input type="hidden" name="productId" value={p.id} />
+              <span className="text-xs font-medium shrink-0" style={{ color: "var(--muted)" }}>
+                Disponibile:
+              </span>
+              {[1, 2, 3, 4, 5, 6, 7].map((dow) => (
+                <label key={dow} className="flex items-center gap-1 text-xs cursor-pointer">
+                  <input
+                    type="checkbox"
+                    name="availableDays"
+                    value={dow}
+                    defaultChecked={p.availableDays.includes(dow)}
+                    className="w-3.5 h-3.5"
+                  />
+                  {DOW_LABELS[dow]}
+                </label>
+              ))}
+              <span className="text-xs" style={{ color: "var(--muted)" }}>
+                (nessun giorno selezionato = sempre disponibile)
+              </span>
+              <button type="submit" className="btn-ghost text-xs py-1 px-3 shrink-0">
+                Salva
+              </button>
+            </form>
           </div>
         ))}
       </div>

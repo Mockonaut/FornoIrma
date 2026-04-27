@@ -321,8 +321,19 @@ export async function createReservationAction(data: {
   const productIds = items.map((i) => i.productId);
   const products = await prisma.product.findMany({
     where: { id: { in: productIds }, isVisible: true },
+    select: { id: true, name: true, availableDays: true },
   });
-  const productMap = new Map(products.map((p) => [p.id, p.name]));
+  const productMap = new Map(products.map((p) => [p.id, p]));
+
+  // Verifica disponibilità prodotti nel giorno scelto
+  const dow = dateObj.getDay() === 0 ? 7 : dateObj.getDay();
+  for (const item of items) {
+    const p = productMap.get(item.productId);
+    if (!p) return { error: "Uno o più prodotti non sono disponibili." };
+    if (p.availableDays.length > 0 && !p.availableDays.includes(dow)) {
+      return { error: `Il prodotto "${p.name}" non è disponibile nella data selezionata.` };
+    }
+  }
 
   const code = generateReservationCode();
   const reservation = await prisma.reservation.create({
@@ -335,7 +346,7 @@ export async function createReservationAction(data: {
       items: {
         create: items.map((item) => ({
           productId: item.productId,
-          productName: productMap.get(item.productId) ?? "Prodotto",
+          productName: productMap.get(item.productId)?.name ?? "Prodotto",
           quantity: item.quantity,
         })),
       },
@@ -384,6 +395,21 @@ export async function createProductAction(formData: FormData) {
 
   revalidatePath("/admin/prodotti");
   revalidatePath("/prodotti");
+}
+
+export async function updateProductAvailableDaysAction(formData: FormData) {
+  const session = await auth();
+  if (session?.user?.role !== "ADMIN") return;
+
+  const productId = (formData.get("productId") as string).trim();
+  const raw = formData.getAll("availableDays").map((v) => parseInt(v as string, 10)).filter((n) => n >= 1 && n <= 7);
+
+  await prisma.product.update({
+    where: { id: productId },
+    data: { availableDays: raw },
+  });
+
+  revalidatePath("/admin/prodotti");
 }
 
 export async function deleteProductAction(formData: FormData) {
