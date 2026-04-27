@@ -9,22 +9,30 @@ function getAdminClient() {
   return createClient(url, key);
 }
 
+const ALLOWED_MIMES = ["image/jpeg", "image/png", "image/webp"];
+const ALLOWED_EXTS = ["jpg", "jpeg", "png", "webp"];
+const MAX_SIZE_BYTES = 5 * 1024 * 1024;
+
 export async function uploadProductImage(
   productId: string,
   file: File
 ): Promise<string> {
+  if (!ALLOWED_MIMES.includes(file.type)) throw new Error("Tipo file non consentito. Usa JPEG, PNG o WebP.");
+  const ext = file.name.split(".").pop()?.toLowerCase() ?? "";
+  if (!ALLOWED_EXTS.includes(ext)) throw new Error("Estensione file non consentita.");
+  if (file.size > MAX_SIZE_BYTES) throw new Error("Il file supera il limite di 5 MB.");
+
   const supabase = getAdminClient();
-  const ext = file.name.split(".").pop() ?? "jpg";
-  const path = `${productId}/${Date.now()}.${ext}`;
+  const safePath = `${productId}/${Date.now()}.${ext}`;
 
   const bytes = await file.arrayBuffer();
   const { error } = await supabase.storage
     .from(BUCKET)
-    .upload(path, bytes, { contentType: file.type, upsert: true });
+    .upload(safePath, bytes, { contentType: file.type, upsert: true });
 
   if (error) throw new Error(error.message);
 
-  const { data } = supabase.storage.from(BUCKET).getPublicUrl(path);
+  const { data } = supabase.storage.from(BUCKET).getPublicUrl(safePath);
   return data.publicUrl;
 }
 

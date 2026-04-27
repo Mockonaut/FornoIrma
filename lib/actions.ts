@@ -59,9 +59,10 @@ export async function registerAction(
     data: { name, email, phone, password: await bcrypt.hash(password, 12) },
   });
 
-  // Crea token di verifica email (scade in 24h)
+  // Crea token di verifica email (scade in 24h) — elimina eventuali token precedenti
   const token = randomBytes(32).toString("hex");
   const expires = new Date(Date.now() + 24 * 60 * 60 * 1000);
+  await prisma.verificationToken.deleteMany({ where: { identifier: user.email! } });
   await prisma.verificationToken.create({
     data: { identifier: user.email!, token, expires },
   });
@@ -316,6 +317,24 @@ export async function createReservationAction(data: {
     if (!isOpenOnDate(oh, dateObj)) {
       return { error: "Il panificio è chiuso in quel giorno. Scegli una data diversa." };
     }
+  }
+
+  // Verifica capienza slot per la data scelta
+  const slot = await prisma.pickupSlot.findUnique({
+    where: { id: pickupSlotId },
+    select: { maxOrders: true, isActive: true },
+  });
+  if (!slot || !slot.isActive) return { error: "Fascia oraria non disponibile." };
+
+  const slotBookings = await prisma.reservation.count({
+    where: {
+      pickupSlotId,
+      pickupDate: new Date(dateObj.getFullYear(), dateObj.getMonth(), dateObj.getDate()),
+      status: { notIn: ["CANCELLED"] },
+    },
+  });
+  if (slotBookings >= slot.maxOrders) {
+    return { error: "La fascia oraria selezionata è al completo per questa data. Scegline un'altra." };
   }
 
   const productIds = items.map((i) => i.productId);
