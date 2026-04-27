@@ -5,6 +5,7 @@ import {
   togglePickupSlotAction,
   deletePickupSlotAction,
   saveOpeningHoursAction,
+  saveMaxOpenReservationsAction,
   addClosureDateAction,
   removeClosureDateAction,
 } from "@/lib/actions";
@@ -50,9 +51,34 @@ export default async function AdminImpostazioniPage() {
         <p className="section-label mb-1">Gestione</p>
         <h1 className="text-3xl font-extrabold">Impostazioni</h1>
         <p className="text-sm mt-1" style={{ color: "var(--muted)" }}>
-          Fasce orarie di ritiro, orari di apertura e chiusure straordinarie.
+          Fasce orarie, orari di apertura, chiusure straordinarie e limiti prenotazioni.
         </p>
       </div>
+
+      {/* ── 0. Limiti prenotazioni ──────────────────────────────────────────── */}
+      <section className="card p-6 space-y-5">
+        <div>
+          <h2 className="font-extrabold text-lg">Limiti prenotazioni</h2>
+          <p className="text-sm mt-0.5" style={{ color: "var(--muted)" }}>
+            Numero massimo di prenotazioni aperte (in attesa o confermate) per ogni cliente.
+          </p>
+        </div>
+        <form action={saveMaxOpenReservationsAction} className="flex items-end gap-3">
+          <div className="flex flex-col gap-1">
+            <label className="label">Max prenotazioni aperte per cliente</label>
+            <input
+              name="maxOpenReservations"
+              type="number"
+              min="1"
+              max="20"
+              defaultValue={settings?.maxOpenReservations ?? 3}
+              className="input py-2 text-sm w-28"
+              required
+            />
+          </div>
+          <button className="btn-primary text-sm py-2 px-5">Salva</button>
+        </form>
+      </section>
 
       {/* ── 1. Fasce orarie ─────────────────────────────────────────────────── */}
       <section className="card p-6 space-y-5">

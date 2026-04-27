@@ -27,6 +27,7 @@ export async function Nav() {
         <nav className="hidden items-center gap-1 md:flex">
           {[
             { href: "/prodotti", label: "Prodotti" },
+            { href: "/disponibilita", label: "Disponibilità" },
             { href: "/prenotazioni", label: "Prenotazioni" },
             { href: "/chi-siamo", label: "Chi siamo" },
             { href: "/contatti", label: "Contatti" },

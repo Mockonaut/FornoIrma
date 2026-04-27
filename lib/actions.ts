@@ -660,6 +660,24 @@ export async function saveOpeningHoursAction(formData: FormData) {
   revalidatePath("/");
 }
 
+// ─── Admin: Max prenotazioni aperte ──────────────────────────────────────────
+
+export async function saveMaxOpenReservationsAction(formData: FormData) {
+  await assertAdmin();
+
+  const value = parseInt(formData.get("maxOpenReservations") as string, 10);
+  if (isNaN(value) || value < 1) return;
+
+  const existing = await prisma.businessSettings.findFirst();
+  if (existing) {
+    await prisma.businessSettings.update({ where: { id: existing.id }, data: { maxOpenReservations: value } });
+  } else {
+    await prisma.businessSettings.create({ data: { maxOpenReservations: value } });
+  }
+
+  revalidatePath("/admin/impostazioni");
+}
+
 // ─── Admin: Chiusure straordinarie ───────────────────────────────────────────
 
 export async function addClosureDateAction(formData: FormData) {
