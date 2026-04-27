@@ -105,6 +105,24 @@ export function getOpenStatus(
   return { open: false, label: "Chiuso", nextChange: null };
 }
 
+/**
+ * Genera uno slug unico verificando nel DB. Se lo slug base è già occupato
+ * aggiunge un suffisso numerico progressivo (-2, -3, …).
+ * @param base slug già passato per slugify
+ * @param exists funzione che interroga il DB per lo slug candidato
+ */
+export async function generateUniqueSlug(
+  base: string,
+  exists: (slug: string) => Promise<boolean>
+): Promise<string> {
+  let slug = base;
+  let counter = 2;
+  while (await exists(slug)) {
+    slug = `${base}-${counter++}`;
+  }
+  return slug;
+}
+
 export function generateReservationCode(): string {
   const prefix = "FI";
   const timestamp = Date.now().toString(36).toUpperCase();

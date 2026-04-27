@@ -5,6 +5,7 @@ import { format } from "date-fns";
 import { it } from "date-fns/locale";
 import { formatReservationStatus, RESERVATION_STEPS } from "@/lib/utils";
 import { ReservationStatus } from "@prisma/client";
+import { CancelReservationButton } from "@/components/reservations/cancel-reservation-button";
 
 function StatusProgress({ status }: { status: ReservationStatus }) {
   if (status === "CANCELLED") {
@@ -115,6 +116,17 @@ export default async function UserReservationsPage() {
                     </span>
                   ))}
                 </div>
+
+                {/* Azione annullamento */}
+                {(reservation.status === "PENDING" || reservation.status === "CONFIRMED") &&
+                  reservation.pickupDate > new Date() && (
+                    <div className="pt-2 border-t" style={{ borderColor: "var(--border)" }}>
+                      <CancelReservationButton
+                        reservationId={reservation.id}
+                        code={reservation.code}
+                      />
+                    </div>
+                  )}
               </div>
             </article>
           ))}

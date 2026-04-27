@@ -8,7 +8,7 @@ import slugify from "slugify";
 import { randomBytes } from "crypto";
 import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth";
-import { generateReservationCode, isOpenOnDate } from "@/lib/utils";
+import { generateReservationCode, generateUniqueSlug, isOpenOnDate } from "@/lib/utils";
 import { ReservationStatus } from "@prisma/client";
 import { sendVerificationEmail, sendPasswordResetEmail } from "@/lib/email";
 import { uploadProductImage, deleteProductImage } from "@/lib/supabase-storage";
@@ -83,7 +83,10 @@ export async function createCategoryAction(formData: FormData) {
   const description = (formData.get("description") as string | null)?.trim() || undefined;
   if (!name) return;
 
-  const slug = slugify(name, { lower: true, strict: true });
+  const baseSlug = slugify(name, { lower: true, strict: true });
+  const slug = await generateUniqueSlug(baseSlug, (s) =>
+    prisma.category.findUnique({ where: { slug: s } }).then(Boolean)
+  );
   const max = await prisma.category.aggregate({ _max: { sortOrder: true } });
   await prisma.category.create({
     data: { name, slug, description, sortOrder: (max._max.sortOrder ?? 0) + 1 },
@@ -396,7 +399,10 @@ export async function createProductAction(formData: FormData) {
 
   if (!name || !categoryId) return;
 
-  const slug = slugify(name, { lower: true, strict: true });
+  const baseSlug = slugify(name, { lower: true, strict: true });
+  const slug = await generateUniqueSlug(baseSlug, (s) =>
+    prisma.product.findUnique({ where: { slug: s } }).then(Boolean)
+  );
   const max = await prisma.product.aggregate({ _max: { sortOrder: true } });
 
   await prisma.product.create({
@@ -494,6 +500,42 @@ export async function toggleProductVisibilityAction(formData: FormData) {
 
   revalidatePath("/admin/prodotti");
   revalidatePath("/prodotti");
+}
+
+// ─── Cliente: cancellazione prenotazione ────────────────────────────────────
+
+export async function cancelReservationAction(
+  formData: FormData
+): Promise<{ error?: string }> {
+  const session = await auth();
+  if (!session?.user?.id) return { error: "Non autenticato." };
+
+  const reservationId = (formData.get("reservationId") as string).trim();
+  if (!reservationId) return { error: "Prenotazione non valida." };
+
+  const reservation = await prisma.reservation.findUnique({
+    where: { id: reservationId },
+    select: { userId: true, status: true, pickupDate: true },
+  });
+
+  if (!reservation || reservation.userId !== session.user.id)
+    return { error: "Prenotazione non trovata." };
+
+  // Consentita solo se ancora in attesa o confermata
+  if (reservation.status !== "PENDING" && reservation.status !== "CONFIRMED")
+    return { error: "Non è possibile annullare una prenotazione in questo stato." };
+
+  // Consentita solo se il giorno di ritiro non è già passato
+  if (reservation.pickupDate < new Date())
+    return { error: "Non è possibile annullare una prenotazione con data di ritiro già passata." };
+
+  await prisma.reservation.update({
+    where: { id: reservationId },
+    data: { status: "CANCELLED" },
+  });
+
+  revalidatePath("/area-clienti/prenotazioni");
+  return {};
 }
 
 // ─── Notifiche ────────────────────────────────────────────────────────────────
