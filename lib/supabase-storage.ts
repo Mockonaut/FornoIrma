@@ -1,4 +1,5 @@
 import { createClient } from "@supabase/supabase-js";
+import { ALLOWED_IMAGE_MIMES, ALLOWED_IMAGE_EXTS, MAX_IMAGE_SIZE_BYTES } from "@/lib/constants";
 
 const BUCKET = "product-images";
 
@@ -9,18 +10,17 @@ function getAdminClient() {
   return createClient(url, key);
 }
 
-const ALLOWED_MIMES = ["image/jpeg", "image/png", "image/webp"];
-const ALLOWED_EXTS = ["jpg", "jpeg", "png", "webp"];
-const MAX_SIZE_BYTES = 5 * 1024 * 1024;
-
 export async function uploadProductImage(
   productId: string,
   file: File
 ): Promise<string> {
-  if (!ALLOWED_MIMES.includes(file.type)) throw new Error("Tipo file non consentito. Usa JPEG, PNG o WebP.");
+  if (!(ALLOWED_IMAGE_MIMES as readonly string[]).includes(file.type))
+    throw new Error("Tipo file non consentito. Usa JPEG, PNG o WebP.");
   const ext = file.name.split(".").pop()?.toLowerCase() ?? "";
-  if (!ALLOWED_EXTS.includes(ext)) throw new Error("Estensione file non consentita.");
-  if (file.size > MAX_SIZE_BYTES) throw new Error("Il file supera il limite di 5 MB.");
+  if (!(ALLOWED_IMAGE_EXTS as readonly string[]).includes(ext))
+    throw new Error("Estensione file non consentita.");
+  if (file.size > MAX_IMAGE_SIZE_BYTES)
+    throw new Error(`Il file supera il limite di 5 MB.`);
 
   const supabase = getAdminClient();
   const safePath = `${productId}/${Date.now()}.${ext}`;

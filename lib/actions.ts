@@ -9,6 +9,12 @@ import { randomBytes } from "crypto";
 import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth";
 import { generateReservationCode, generateUniqueSlug, isOpenOnDate } from "@/lib/utils";
+import {
+  EMAIL_VERIFICATION_EXPIRY_MS,
+  PASSWORD_RESET_EXPIRY_MS,
+  PASSWORD_RESET_COOLDOWN_MS,
+  DEFAULT_MAX_ORDERS_PER_SLOT,
+} from "@/lib/constants";
 import { ReservationStatus } from "@prisma/client";
 import { sendVerificationEmail, sendPasswordResetEmail } from "@/lib/email";
 import { uploadProductImage, deleteProductImage } from "@/lib/supabase-storage";
@@ -61,7 +67,7 @@ export async function registerAction(
 
   // Crea token di verifica email (scade in 24h) — elimina eventuali token precedenti
   const token = randomBytes(32).toString("hex");
-  const expires = new Date(Date.now() + 24 * 60 * 60 * 1000);
+  const expires = new Date(Date.now() + EMAIL_VERIFICATION_EXPIRY_MS);
   await prisma.verificationToken.deleteMany({ where: { identifier: user.email! } });
   await prisma.verificationToken.create({
     data: { identifier: user.email!, token, expires },
@@ -576,7 +582,7 @@ export async function createPickupSlotAction(formData: FormData) {
   const label = (formData.get("label") as string)?.trim();
   const startTime = (formData.get("startTime") as string)?.trim();
   const endTime = (formData.get("endTime") as string)?.trim();
-  const maxOrders = parseInt(formData.get("maxOrders") as string) || 20;
+  const maxOrders = parseInt(formData.get("maxOrders") as string) || DEFAULT_MAX_ORDERS_PER_SLOT;
 
   if (!label || !startTime || !endTime) return;
 
@@ -678,6 +684,16 @@ export async function requestPasswordResetAction(
   // Risposta sempre positiva per non rivelare se l'email esiste
   if (!user) return { success: true };
 
+  // Rate limiting: max 1 richiesta ogni 10 minuti per email
+  // Un token creato < 10 min fa ha expires > (ora + 50 min)
+  const existing = await prisma.verificationToken.findFirst({
+    where: {
+      identifier: `reset:${email}`,
+      expires: { gt: new Date(Date.now() + PASSWORD_RESET_EXPIRY_MS - PASSWORD_RESET_COOLDOWN_MS) },
+    },
+  });
+  if (existing) return { success: true }; // silenzioso: non rivela se è rate-limited
+
   // Elimina token precedenti per questo utente
   await prisma.verificationToken.deleteMany({ where: { identifier: `reset:${email}` } });
 
@@ -686,7 +702,7 @@ export async function requestPasswordResetAction(
     data: {
       identifier: `reset:${email}`,
       token,
-      expires: new Date(Date.now() + 60 * 60 * 1000), // 1 ora
+      expires: new Date(Date.now() + PASSWORD_RESET_EXPIRY_MS),
     },
   });
 

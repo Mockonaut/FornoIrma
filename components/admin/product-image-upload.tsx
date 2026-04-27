@@ -3,6 +3,7 @@
 import { useRef, useState, useTransition } from "react";
 import Image from "next/image";
 import { upsertProductImageAction } from "@/lib/actions";
+import { MAX_IMAGE_SIZE_BYTES, MAX_IMAGE_SIZE_LABEL } from "@/lib/constants";
 
 interface Props {
   productId: string;
@@ -25,8 +26,8 @@ export function ProductImageUpload({ productId, currentImageUrl, productName }: 
       setError("Solo file immagine (JPG, PNG, WebP)");
       return;
     }
-    if (file.size > 5 * 1024 * 1024) {
-      setError("Dimensione massima: 5 MB");
+    if (file.size > MAX_IMAGE_SIZE_BYTES) {
+      setError(`Dimensione massima: ${MAX_IMAGE_SIZE_LABEL}`);
       return;
     }
 

@@ -3,6 +3,7 @@
 import { useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { createReservationAction } from "@/lib/actions";
+import { isOpenOnDate } from "@/lib/utils";
 import type { Product, Category, PickupSlot } from "@prisma/client";
 
 type ProductWithCategory = Product & { category: Category };
@@ -19,19 +20,10 @@ interface CartItem {
   quantity: number;
 }
 
-// ISO day names matching BusinessSettings.openingHours
-const ISO_DAY_NAMES = ["", "monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"];
-
 function isDateOpen(dateStr: string, closureDates: string[], openingHours: Props["openingHours"]): boolean {
   if (closureDates.includes(dateStr)) return false;
   if (!openingHours) return true;
-  const d = new Date(dateStr + "T12:00:00");
-  const dow = d.getDay() === 0 ? 7 : d.getDay();
-  const dayName = ISO_DAY_NAMES[dow];
-  const entry = openingHours.find((h) => h.day.toLowerCase() === dayName);
-  if (!entry) return false;
-  const hours = entry.hours?.trim().toLowerCase();
-  return !!hours && hours !== "chiuso" && hours !== "closed" && hours !== "-";
+  return isOpenOnDate(openingHours, new Date(dateStr + "T12:00:00"));
 }
 
 export function NewReservationForm({ products, pickupSlots, closureDates, openingHours }: Props) {

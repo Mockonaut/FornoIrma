@@ -9,10 +9,13 @@ export const metadata = { title: "Il mio profilo" };
 export default async function ProfilePage() {
   const session = await requireAuth();
 
-  const user = await prisma.user.findUnique({
-    where: { id: session.user.id },
-    include: { reservations: true },
-  });
+  const [user, reservationCount] = await Promise.all([
+    prisma.user.findUnique({
+      where: { id: session.user.id },
+      select: { name: true, email: true, phone: true },
+    }),
+    prisma.reservation.count({ where: { userId: session.user.id } }),
+  ]);
 
   return (
     <div className="container-shell grid gap-6 py-12 lg:grid-cols-[0.8fr_1.2fr]">
@@ -22,7 +25,7 @@ export default async function ProfilePage() {
         <div className="mt-6 space-y-3 text-[var(--muted)]">
           <p><strong className="text-[var(--foreground)]">Email:</strong> {user?.email}</p>
           <p><strong className="text-[var(--foreground)]">Telefono:</strong> {user?.phone || "Non inserito"}</p>
-          <p><strong className="text-[var(--foreground)]">Prenotazioni totali:</strong> {user?.reservations.length ?? 0}</p>
+          <p><strong className="text-[var(--foreground)]">Prenotazioni totali:</strong> {reservationCount}</p>
         </div>
 
         <ProfileForm initialName={user?.name ?? ""} initialPhone={user?.phone ?? null} />

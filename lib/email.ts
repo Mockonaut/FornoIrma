@@ -86,9 +86,10 @@ export async function sendVerificationEmail(to: string, firstName: string, token
     ${muted("Hai ricevuto questa email perché qualcuno ha usato questo indirizzo per registrarsi su Forno Irma.")}
   `;
 
-  // In sviluppo senza dominio verificato, Resend accetta solo l'email dell'account owner.
-  // Rimuovere DEV_EMAIL_OVERRIDE quando il dominio è verificato su resend.com/domains.
-  const recipient = process.env.DEV_EMAIL_OVERRIDE ?? to;
+  const recipient =
+    process.env.NODE_ENV === "development" && process.env.DEV_EMAIL_OVERRIDE
+      ? process.env.DEV_EMAIL_OVERRIDE
+      : to;
 
   return resend.emails.send({
     from: FROM,
